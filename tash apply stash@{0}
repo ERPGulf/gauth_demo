@@ -1,0 +1,53 @@
+[1mdiff --git a/src/Router/Router.tsx b/src/Router/Router.tsx[m
+[1mindex 92d39d1..4f5b834 100644[m
+[1m--- a/src/Router/Router.tsx[m
+[1m+++ b/src/Router/Router.tsx[m
+[36m@@ -3,6 +3,8 @@[m [mimport { lazy, Suspense } from "react";[m
+ import { Navigate, Route, Routes } from "react-router-dom";[m
+ import AuthRoute from "./AuthRoute";[m
+ import LoginAuthRoute from "./LoginAuthRoute";[m
+[32m+[m[32mimport Materials from "@/components/Profile/Materials";[m
+[32m+[m[32mimport CreateUser from "@/components/Profile/CreateUser";[m
+ [m
+ const Home = lazy(() => import("@/pages/Home"));[m
+ const ProductDetails = lazy(() => import("@/pages/ProductDetails"));[m
+[36m@@ -138,6 +140,11 @@[m [mconst Router = () => {[m
+           <Route path="/order-payment" element={<Orderpayment />} />[m
+           <Route path="/html" element={<Html />} />[m
+           <Route path="/profile" element={<Profile/>} />[m
+[32m+[m[32m          <Route path="/Materials" element={<Materials/>} />[m
+[32m+[m[32m          <Route path="/CreateUser" element={<CreateUser/>} />[m
+[32m+[m[41m          [m
+[32m+[m[41m          [m
+[32m+[m[41m          [m
+          [m
+         </Route>[m
+       </Routes>[m
+[1mdiff --git a/src/components/Profile/Sidebar.tsx b/src/components/Profile/Sidebar.tsx[m
+[1mindex 5032d05..154dd41 100644[m
+[1m--- a/src/components/Profile/Sidebar.tsx[m
+[1m+++ b/src/components/Profile/Sidebar.tsx[m
+[36m@@ -191,6 +191,23 @@[m [mconst Sidebar = () => {[m
+           </div>[m
+         </NavLink>[m
+ [m
+[32m+[m[32m        <NavLink to="/Resetpassword" className={linkClasses}>[m
+[32m+[m[32m          <div className="flex w-auto items-center gap-3">[m
+[32m+[m[32m          <h2 className="hidden md:hidden lg:block text-base">[m
+[32m+[m[32m            Reset password[m
+[32m+[m[32m            </h2>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m        </NavLink>[m
+[32m+[m[32m        <NavLink to="/CreateUser" className={linkClasses}>[m
+[32m+[m[32m          <div className="flex w-auto items-center gap-3">[m
+[32m+[m[32m          <h2 className="hidden md:hidden lg:block text-base">[m
+[32m+[m[32m            Create User[m
+[32m+[m[32m            </h2>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m        </NavLink>[m
+[32m+[m
+[32m+[m
+[32m+[m
+         [m
+ [m
+ [m

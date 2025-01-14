@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 188 83.8% 14.5%;
+    --primary-foreground: 0 0% 98%; /* Adjusted for contrast */
+    --secondary: 166 77.6% 49%;
+    --secondary-foreground: 0 0% 98%; /* Adjusted for contrast */
+    --muted: 166 15% 88%; /* Softened based on secondary */
+    --muted-foreground: 166 50% 20%; /* Increased contrast */
+    --accent: 166 77.6% 49%; /* Matching secondary for consistency */
+    --accent-foreground: 0 0% 98%; /* Adjusted for contrast */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 166 20% 80%; /* Harmonized with secondary */
+    --input: 166 20% 80%; /* Harmonized with secondary */
+    --ring: 188 83.8% 14.5%; /* Matching primary */
+    --radius: 1rem;
+    --chart-1: 188 70% 30%; /* Based on primary */
+    --chart-2: 166 60% 40%; /* Based on secondary */
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 188 83.8% 14.5%; /* Updated to match primary */
+    --primary-foreground: 0 0% 98%; /* Adjusted for contrast */
+    --secondary: 166 77.6% 49%; /* Updated to match secondary */
+    --secondary-foreground: 0 0% 98%; /* Adjusted for contrast */
+    --muted: 166 15% 20%; /* Softened for dark mode */
+    --muted-foreground: 166 40% 60%; /* Increased contrast */
+    --accent: 166 77.6% 49%; /* Matching secondary for consistency */
+    --accent-foreground: 0 0% 98%; /* Adjusted for contrast */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 166 20% 30%; /* Harmonized with secondary */
+    --input: 166 20% 30%; /* Harmonized with secondary */
+    --ring: 188 83.8% 14.5%; /* Updated to match primary */
+    --chart-1: 188 70% 30%; /* Based on primary */
+    --chart-2: 166 60% 40%; /* Based on secondary */
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+}
+
+@layer utilities {
+  .step {
+    counter-increment: step;
+  }
+
+  .step:before {
+    @apply absolute inline-flex h-8 w-8 items-center justify-center rounded-full bg-muted text-center -indent-px text-base font-medium;
+    @apply ml-[-41px];
+    content: counter(step);
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+.no_scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
