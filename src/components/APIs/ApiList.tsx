@@ -214,6 +214,17 @@ const ApiList: React.FC = () => {
       targetPage: '/api/IsApiRequestAuth',
     },
 
+  LoginApi: {
+      title: 'Login',
+      api: 'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_token_encrypt_for_user_2fa',
+      parameters: {
+        api_key: '',
+        api_secret: '',
+        app_key: '',
+      },
+      targetPage: '/api/LoginAuth',
+    },
+
 
 
 

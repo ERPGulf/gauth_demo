@@ -3,59 +3,55 @@ import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 
-interface Parameters {
-  api_key: string;
-  api_secret: string;
-  app_key: string;
-  client_secret: string;
-}
-
 const MasterAuth: React.FC = () => {
   const location = useLocation();
-  const [title, setTitle] = useState<string>("Generate Secure Token API");
-  const [description, setDescription] = useState<string>("Fetches the master token");
-  const [api, setApi] = useState<string>(
+  const [title, setTitle] = useState("Generate Secure Token API");
+  const [description, setDescription] = useState("Fetches the master token");
+  const [api, setApi] = useState(
     "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure"
   );
-  const [parameters, setParameters] = useState<Parameters>({
-    api_key: "Administrator",
-    api_secret: "Friday2000@T",
-    app_key:
-      "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-    client_secret: "cfd619c909",
-  });
-
+  const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
   const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (location.state && location.state.masterApiData) {
-      const { title, description, api, parameters } = location.state.masterApiData;
+    if (location.state?.masterApiData) {
+      const { title, description, api } = location.state.masterApiData;
       setTitle(title);
       setDescription(description);
       setApi(api);
-      setParameters(parameters);
     }
   }, [location.state]);
 
   const handleFetchMasterDetails = async () => {
-    setLoading("Fetching Master Details...");
+    setLoading(true);
     try {
-      const data = await fetchMasterDetails(parameters);
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+        api_secret: import.meta.env.VITE_APP_API_SECRET,
+        app_key: import.meta.env.VITE_APP_APP_KEY,
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+      };
+  
+      // Pass the payload to the fetchMasterDetails function
+      const data = await fetchMasterDetails(payload); // Updated to pass parameters
       setMasterData(data);
     } catch (error: any) {
       console.error("Error fetching master details:", error.message);
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
+  
 
   return (
-
-    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg  ">
+    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
+        {/* Title */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
+          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Title
+          </label>
           <input
             type="text"
             value={title}
@@ -64,8 +60,11 @@ const MasterAuth: React.FC = () => {
           />
         </div>
 
+        {/* Description */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Description
+          </label>
           <input
             type="text"
             value={description}
@@ -74,8 +73,11 @@ const MasterAuth: React.FC = () => {
           />
         </div>
 
+        {/* API URL */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
+          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            API URL
+          </label>
           <input
             type="text"
             value={api}
@@ -84,35 +86,35 @@ const MasterAuth: React.FC = () => {
           />
         </div>
 
+        {/* Parameters (Responsive Grid) */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {Object.entries(parameters).map(([key, value]) => (
-              <div key={key} className="flex flex-col">
-                <label className="font-bold text-gray-700 mb-1 sm:mb-2">{key}:</label>
+          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Parameters
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {parameters.map((param, index) => (
+              <div key={index}>
                 <input
                   type="text"
-                  value={value}
-                  onChange={(e) =>
-                    setParameters((prev) => ({
-                      ...prev,
-                      [key]: e.target.value,
-                    }))
-                  }
-                  className="p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={param}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-100 focus:outline-none"
                 />
               </div>
             ))}
           </div>
         </div>
 
+        {/* Fetch Button */}
         <Button
           onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
+          disabled={loading}
         >
           {loading ? "Loading..." : "Proceed"}
         </Button>
+
+        {/* Master Data */}
         {masterData && (
           <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
             <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">
@@ -123,10 +125,8 @@ const MasterAuth: React.FC = () => {
             </pre>
           </div>
         )}
-
       </div>
     </div>
-
   );
 };
 

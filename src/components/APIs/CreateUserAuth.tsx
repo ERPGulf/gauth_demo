@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
+import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 const CreateUserAuth: React.FC = () => {
   const location = useLocation();
 
@@ -20,7 +21,7 @@ const CreateUserAuth: React.FC = () => {
   const [masterData, setMasterData] = useState<any>(null);
   const [createUserData, setCreateUserData] = useState<any>(null);
   const [loading, setLoading] = useState<string | null>(null);
-
+  const [loadingMasterData, setLoadingMasterData] = useState<boolean>(false);
 
 
   useEffect(() => {
@@ -35,47 +36,37 @@ const CreateUserAuth: React.FC = () => {
 
 
   // Fetch Master Token
-  const fetchMasterDetails = async () => {
-    setLoading("Fetching Master Details...");
+  const handleFetchMasterDetails = async () => {
+    setLoadingMasterData(true);
     try {
-      const formData = new FormData();
-      formData.append("api_key", "Administrator");
-      formData.append("api_secret", "Friday2000@T");
-      formData.append(
-        "app_key",
-        "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ=="
-      );
-      formData.append("client_secret", "cfd619c909");
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+        api_secret: import.meta.env.VITE_APP_API_SECRET,
+        app_key: import.meta.env.VITE_APP_APP_KEY,
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+      };
 
-      const response = await axios.post(
-        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      setMasterData(response.data);
+      // Pass the payload to the fetchMasterDetails function
+      const data = await fetchMasterDetails(payload);
+      setMasterData(data); // Correctly update masterData
+
     } catch (error: any) {
-      console.error("Error fetching master details:", error.response?.data || error.message);
-      alert("Failed to fetch master details. Please try again.");
+      console.error("Error fetching master details:", error.message);
     } finally {
-      setLoading(null);
+      setLoadingMasterData(false);
     }
   };
-
-
 
   // Create User
   const createUser = async () => {
     setLoading("Creating User...");
     try {
       // Check for masterData and access token
-      if (!masterData || !masterData.data?.access_token) {
+      if (!masterData || !masterData.access_token) {
         throw new Error("Fetch master API first");
       }
-      const accessToken = masterData.data.access_token;
+      console.log("Access Token:", masterData.access_token);
+      const accessToken = masterData.access_token;
 
       // Validate user inputs
       const { fullname, mobile_no, email, password } = parameters;
@@ -203,7 +194,7 @@ const CreateUserAuth: React.FC = () => {
 
         {/* Fetch Master Details Button */}
         <Button
-          onClick={fetchMasterDetails}
+          onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
           disabled={!!loading}
         >

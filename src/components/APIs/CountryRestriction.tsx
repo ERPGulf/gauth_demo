@@ -39,7 +39,7 @@ const CountryRestriction: React.FC = () => {
       formData.append('api_key', parameters.api_key);
       formData.append('api_secret', parameters.api_secret);
       formData.append('app_key', parameters.app_key);
-      formData.append('client_secret', 'cfd619c909');
+      formData.append('client_secret', 'import.meta.env.VITE_APP_CLIENT_SECRET');
 
       const response = await axios.post(
         'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
