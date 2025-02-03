@@ -11,15 +11,7 @@ const UpdatePasswordAuth: React.FC = () => {
   const [api, setApi] = useState<string>(
     "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password"
   );
-
-  // Parameters for master details (hidden from UI)
-  const masterDetailsParams = {
-    api_key: "Administrator",
-    api_secret: "Friday2000@T",
-    app_key:
-      "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-    client_secret: "cfd619c909",
-  };
+ 
 
   // Parameters for updating password (entered by user)
   const [updatePasswordParams, setUpdatePasswordParams] = useState({
@@ -29,29 +21,33 @@ const UpdatePasswordAuth: React.FC = () => {
 
   const [masterData, setMasterData] = useState<any>(null);
   const [updatePasswordData, setUpdatePasswordData] = useState<any>(null);
-  const [loadingMasterData, setLoadingMasterData] = useState<boolean>(false);
+ const [loading, setLoading] = useState(false);
   const [loadingUpdatePassword, setLoadingUpdatePassword] = useState<boolean>(false);
 
   // Fetch master details
   const handleFetchMasterDetails = async () => {
-    setLoadingMasterData(true);
-    try {
-      const data = await fetchMasterDetails(masterDetailsParams);
-      setMasterData(data);
-    } catch (error: any) {
-      console.error(
-        "Error fetching master details:",
-        error.response?.data || error.message
-      );
-      alert("Failed to fetch master details. Please try again.");
-    } finally {
-      setLoadingMasterData(false);
-    }
-  };
+     setLoading(true);
+     try {
+       const payload = {
+         api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+         api_secret: import.meta.env.VITE_APP_API_SECRET,
+         app_key: import.meta.env.VITE_APP_APP_KEY,
+         client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+       };
+   
+       // Pass the payload to the fetchMasterDetails function
+       const data = await fetchMasterDetails(payload); // Updated to pass parameters
+       setMasterData(data);
+     } catch (error: any) {
+       console.error("Error fetching master details:", error.message);
+     } finally {
+       setLoading(false);
+     }
+   };
 
   // Update user password
   const updateUserPassword = async () => {
-    if (!masterData?.data?.access_token) {
+    if (!masterData?.access_token) {
       alert("Please fetch the master data first.");
       return;
     }
@@ -70,7 +66,7 @@ const UpdatePasswordAuth: React.FC = () => {
 
       const response = await axios.post(api, formData, {
         headers: {
-          Authorization: `Bearer ${masterData.data.access_token}`,
+          Authorization: `Bearer ${masterData.access_token}`,
         },
       });
       setUpdatePasswordData(response.data);
@@ -146,9 +142,9 @@ const UpdatePasswordAuth: React.FC = () => {
         <Button
           onClick={handleFetchMasterDetails}
           className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/70"
-          disabled={loadingMasterData}
+          disabled={loading}
         >
-          {loadingMasterData ? "Fetching Master Data..." : "Fetch Master Data"}
+          {loading ? "Fetching Master Data..." : "Fetch Master Data"}
         </Button>
 
         {masterData && (
@@ -160,7 +156,7 @@ const UpdatePasswordAuth: React.FC = () => {
           </div>
         )}
 
-        {masterData?.data?.access_token && (
+        {masterData?.access_token && (
           <>
             <Button
               onClick={updateUserPassword}

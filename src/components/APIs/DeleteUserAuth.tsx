@@ -1,100 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
+import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 
-const DeleteUserAuth: React.FC = () => {
+const EnableUserAuth: React.FC = () => {
   const location = useLocation();
-  const [title, setTitle] = useState<string>(' Delete User API');
-  const [description, setDescription] = useState<string>('Deletes a user based on their email and mobile number.');
+  const [title, setTitle] = useState<string>("Enable User API");
+  const [description, setDescription] = useState<string>(
+    "Enables a user account by providing username, email, and mobile number."
+  );
   const [api, setApi] = useState<string>(
-    'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_delete_user'
+    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_user_enable"
   );
   const [parameters, setParameters] = useState<Record<string, string>>({
-    api_key: 'Administrator',
-    api_secret: 'Friday2000@T',
-    app_key:
-      'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==',
+    username: "",
+    email: "",
+    mobile_no: "",
   });
-
   const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | null>(null);
-  const [deleteResponse, setDeleteResponse] = useState<any>(null);
-  const [email, setEmail] = useState<string>('');
-  const [mobileNo, setMobileNo] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [enableResponse, setEnableResponse] = useState<any>(null);
 
   useEffect(() => {
     if (location.state && location.state.masterApiData) {
-      const { title, description, api, parameters } = location.state.masterApiData;
+      const { title, description, api } = location.state.masterApiData;
       setTitle(title);
       setDescription(description);
       setApi(api);
-      setParameters(parameters);
     }
   }, [location.state]);
 
-  const fetchMasterDetails = async () => {
-    setLoading('Fetching Master Details...');
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('api_key', 'Administrator');
-      formData.append('api_secret', 'Friday2000@T');
-      formData.append(
-        'app_key',
-        'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ=='
-      );
-      formData.append('client_secret', 'cfd619c909');
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+        api_secret: import.meta.env.VITE_APP_API_SECRET,
+        app_key: import.meta.env.VITE_APP_APP_KEY,
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+      };
 
-      const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
-        formData,
-        {
-          headers: {
-
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      setMasterData(response.data);
+      const data = await fetchMasterDetails(payload);
+      setMasterData(data);
     } catch (error: any) {
-      console.error('Error fetching master details:', error.response?.data || error.message);
+      console.error("Error fetching master details:", error.message);
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
-  const deleteUser = async () => {
-    if (!email || !mobileNo) {
-      alert('Please provide both email and mobile number.');
+  const enableUser = async () => {
+    const { username, email, mobile_no } = parameters;
+
+    if (!username || !email || !mobile_no) {
+      alert("Please provide username, email, and mobile number.");
       return;
     }
-    const accessToken = masterData.data.access_token;
 
-    setLoading('Deleting User...');
+    const accessToken = masterData?.data?.access_token;
+
+    setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('email', email);
-      formData.append('mobile_no', mobileNo);
+      formData.append("username", username);
+      formData.append("email", email);
+      formData.append("mobile_no", mobile_no);
 
-      const response = await axios.delete(api, {
+      const response = await axios.post(api, formData, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-        data: formData,
       });
-      setDeleteResponse(response.data);
+
+      setEnableResponse(response.data);
+      alert("User account enabled successfully.");
     } catch (error: any) {
-      console.error('Error deleting user:', error.response?.data || error.message);
-      setDeleteResponse(error.response?.data || error.message);
+      console.error("Error enabling user:", error.response?.data || error.message);
+      alert("Failed to enable user. Please try again.");
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg  ">
-     <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-
+    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
+      <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
           <input
@@ -124,6 +115,7 @@ const DeleteUserAuth: React.FC = () => {
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -147,58 +139,35 @@ const DeleteUserAuth: React.FC = () => {
         </div>
 
         <Button
-          onClick={fetchMasterDetails}
+          onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
+          disabled={loading}
         >
-          proceed
+          Fetch Master Data
         </Button>
+
         {masterData && (
           <>
             <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-              <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">
-                Master Data:
-              </h2>
+              <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
               <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
                 {JSON.stringify(masterData, null, 2)}
               </pre>
             </div>
 
-
-            <div className="mt-4 mb-6 sm:mb-8">
-              <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-               className=" w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="mb-6 sm:mb-8">
-              <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Mobile Number</label>
-              <input
-                type="text"
-                value={mobileNo}
-                onChange={(e) => setMobileNo(e.target.value)}
-                className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-
             <Button
-              onClick={deleteUser}
+              onClick={enableUser}
               className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!loading}
+              disabled={loading}
             >
-              Delete User
+              Enable User
             </Button>
 
-            {deleteResponse && (
+            {enableResponse && (
               <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow">
-                <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Delete Response:</h2>
+                <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Enable Response:</h2>
                 <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-                  {JSON.stringify(deleteResponse, null, 2)}
+                  {JSON.stringify(enableResponse, null, 2)}
                 </pre>
               </div>
             )}
@@ -206,8 +175,7 @@ const DeleteUserAuth: React.FC = () => {
         )}
       </div>
     </div>
-
   );
 };
 
-export default DeleteUserAuth;
+export default EnableUserAuth;

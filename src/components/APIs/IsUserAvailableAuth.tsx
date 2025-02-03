@@ -14,11 +14,10 @@ const IsUserAvailableAuth: React.FC = () => {
 
   // Parameters for master details (hidden from UI)
   const masterDetailsParams = {
-    api_key: "Administrator",
-    api_secret: "Friday2000@T",
-    app_key:
-      "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-    client_secret: "cfd619c909",
+    api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+    api_secret: import.meta.env.VITE_APP_API_SECRET,
+    app_key: import.meta.env.VITE_APP_APP_KEY,
+    client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
   };
 
   // Parameters for checking user availability (entered by user)
@@ -51,7 +50,7 @@ const IsUserAvailableAuth: React.FC = () => {
 
   // Check if user is available
   const checkUserAvailability = async () => {
-    if (!masterData?.data?.access_token) {
+    if (!masterData?.access_token) {
       alert("Please fetch the master data first.");
       return;
     }
@@ -70,14 +69,14 @@ const IsUserAvailableAuth: React.FC = () => {
 
       const response = await axios.get(api, {
         headers: {
-          Authorization: `Bearer ${masterData.data.access_token}`,
+          Authorization: `Bearer ${masterData.access_token}`,
         },
         params: {
           mobile_phone: isUserAvailableParams.mobile_phone,
           user_email: isUserAvailableParams.user_email,
         },
       });
-      setUserAvailabilityData(response.data);
+      setUserAvailabilityData(response);
     } catch (error: any) {
       console.error(
         "Error checking user availability:",

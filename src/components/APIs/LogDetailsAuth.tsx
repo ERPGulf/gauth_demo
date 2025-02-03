@@ -13,17 +13,18 @@ const LogDetailsAuth: React.FC = () => {
     const [title, setTitle] = useState<string>('User Login Time API');
     const [description, setDescription] = useState<string>('This API fetches or logs the user login time.');
     const [apiUrl, setApiUrl] = useState<string>(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.login_time'
+        import.meta.env.VITE_BASE_URL + 'gauth_erpgulf.gauth_erpgulf.backend_server.login_time'
     );
     const [parameters, setParameters] = useState<Record<string, string>>({
         username: '',
         password: '',
-        app_key: 'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==',
     });
     const [masterData, setMasterData] = useState<any>(null);
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState<string | null>(null);
     const [loginTimeData, setLoginTimeData] = useState<any>(null); // State for login time data
+
+    const appKey = import.meta.env.VITE_APP_APP_KEY; // Only used in API calls, not UI
 
     useEffect(() => {
         if (location.state && location.state.userApiData) {
@@ -31,106 +32,104 @@ const LogDetailsAuth: React.FC = () => {
             setTitle(title);
             setDescription(description);
             setApiUrl(api);
-            setParameters(parameters);
+            setParameters((prev) => ({
+                ...prev,
+                ...parameters,
+            }));
         }
     }, [location.state]);
 
-
-
     const fetchMasterDetails = async () => {
-        setLoading("Fetching Master Details...");
+        setLoading('Fetching Master Details...');
         try {
             const formData = new FormData();
-            formData.append("api_key", "Administrator");
-            formData.append("api_secret", "Friday2000@T");
-            formData.append("app_key", parameters.app_key);
-            formData.append("client_secret", "cfd619c909");
+            formData.append('api_key', import.meta.env.VITE_APP_gAUTH_API_KEY);
+            formData.append('api_secret', import.meta.env.VITE_APP_API_SECRET);
+            formData.append('app_key', appKey);
+            formData.append('client_secret', import.meta.env.VITE_APP_CLIENT_SECRET);
 
             const response = await axios.post(
-                'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
+                import.meta.env.VITE_BASE_URL + 'gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
                 formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
+                { headers: { 'Content-Type': 'multipart/form-data' } }
             );
-            console.log("Fetched Master Data:", response.data);
+
             setMasterData(response.data);
         } catch (error: any) {
-            console.error("Error fetching master details:", error.response?.data || error.message);
-            toast({ title: "Error", description: "Failed to fetch master data." });
+            console.error('Error fetching master details:', error.response?.data || error.message);
+            toast({ title: 'Error', description: 'Failed to fetch master data.' });
         } finally {
             setLoading(null);
         }
     };
-
     const fetchUserDetails = async () => {
-        setLoading("Fetching User Details...");
+        setLoading('Fetching User Details...');
         try {
             if (!masterData || !masterData?.data?.access_token) {
-                throw new Error("Fetch master API first");
+                throw new Error('Fetch master API first');
             }
+
             const accessToken = masterData.data.access_token;
 
-            const { username, password, app_key } = parameters;
-
-            if (!username || !password || !app_key) {
-                throw new Error("Missing required parameters: username, password, or app_key.");
+            const { username, password } = parameters;
+            if (!username || !password) {
+                throw new Error('Missing required parameters: username or password.');
             }
 
             const formData = new FormData();
-            formData.append("username", username);
-            formData.append("password", password);
-            formData.append("app_key", app_key);
-            formData.append("client_secret", "cfd619c909");
+            formData.append('username', username);
+            formData.append('password', password);
+            formData.append('app_key', appKey); // Use appKey securely here
+            formData.append('client_secret', import.meta.env.VITE_APP_CLIENT_SECRET);
 
             const response = await axios.post(
-                'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users', formData, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+                import.meta.env.VITE_BASE_URL +
+                    'gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users',
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
 
-            console.log("Fetched User Data:", response.data);
             setUserData(response.data);
         } catch (error: any) {
-            console.error("Error fetching user details:", {
+            console.error('Error fetching user details:', {
                 message: error.message,
                 response: error.response?.data || null,
-
             });
-            const errorMessage = error.response?.data?.message || "An error occurred while fetching user details.";
-            toast({ title: "Error", description: errorMessage });
+            const errorMessage = error.response?.data?.message || 'An error occurred while fetching user details.';
+            toast({ title: 'Error', description: errorMessage });
         } finally {
             setLoading(null);
         }
     };
 
     const fetchLoginTimeData = async () => {
-        setLoading("Fetching Login Time Data...");
+        setLoading('Fetching Login Time Data...');
         try {
             if (!masterData || !masterData?.data?.access_token) {
-                throw new Error("Fetch master API first");
+                throw new Error('Fetch master API first');
             }
 
             const accessToken = masterData.data.access_token;
 
-            const response = await axios.get(
-                "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.login_time",
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                }
-            );
+            const response = await axios.get(apiUrl, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
 
-            console.log("Fetched Login Time Data:", response.data);
             setLoginTimeData(response.data);
         } catch (error: any) {
-            console.error("Error fetching login time data:", {
+            console.error('Error fetching login time data:', {
                 message: error.message,
                 response: error.response?.data || null,
             });
-            const errorMessage = error.response?.data?.message || "An error occurred while fetching login time data.";
-            toast({ title: "Error", description: errorMessage });
+            const errorMessage = error.response?.data?.message || 'An error occurred while fetching login time data.';
+            toast({ title: 'Error', description: errorMessage });
         } finally {
             setLoading(null);
         }

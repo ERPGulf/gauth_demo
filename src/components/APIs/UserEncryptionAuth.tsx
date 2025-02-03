@@ -1,167 +1,208 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import axios from 'axios';
-import { useToast } from '../ui/use-toast';
+
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { useToast } from "../ui/use-toast";
 import { Button } from "@/components/ui/button";
-
-import 'react-toastify/dist/ReactToastify.css';
-
+import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
+import axios from "axios";
 const UserEncryptionAuth: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const [title, setTitle] = useState('Generate User Encrypted Token');
-  const [description, setDescription] = useState('This API generates an encrypted token for the user using the provided encrypted key.');
-  const [apiUrl, setApiUrl] = useState('https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_encrypt_for_user');
+  const [title, setTitle] = useState("Generate User Token API");
+  const [description, setDescription] = useState("Fetches the user-specific token");
+  const [apiUrl, setApiUrl] = useState(
+    `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users`
+  );
+
   const [parameters, setParameters] = useState({
-    encrypted_key: 'WU1LXF1yWUBKRFJGUEYXVlxfCw5/R1pWUE0LBQMCcWADD35IfAVjX1dZfFlsT35IVkx3X34Df2NzXH1lYENgT3YBaF5gBmpYfE1jcWYHfwZ8Bnx2Y1xjWHYHf15sBX0AY110YmVYa3N8BWlYdAB2cn4DfFl0BH5jDAk=',
-    username: 'hyrin@htsqatar.com',
-    password: 'Friday2000@T',
-    app_key: 'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==',
+    username: "",
+    password: "",
   });
-  const [masterData, setMasterData] = useState<any>(null);
-  const [userData, setUserData] = useState<any>(null);
-  const [encryptedTokenData, setEncryptedTokenData] = useState<any>(null);
+
+  const [masterData, setMasterData] = useState<{ access_token?: string } | null>(null);
+  const [userData, setUserData] = useState<Record<string, any> | null>(null);
   const [encryptedKey, setEncryptedKey] = useState<string | null>(null);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState<string | null>(null);
+  const [encryptedTokenData, setEncryptedTokenData] = useState<any>(null);
+
+
 
   useEffect(() => {
-    if (location.state && location.state.userApiData) {
+    if (location.state?.userApiData) {
       const { title, description, api, parameters } = location.state.userApiData;
       setTitle(title);
       setDescription(description);
       setApiUrl(api);
-      setParameters(parameters);
+      setParameters({ username: parameters.username || "", password: parameters.password || "" });
     }
   }, [location.state]);
 
-  const fetchMasterDetails = async () => {
-    setLoading('Fetching Master Details...');
+
+  const handleMouseEnter = () => {
+    if (!masterData?.access_token) {
+      toast({ title: "Warning", description: "Please fetch master data first" });
+    }
+  };
+
+
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
+    setLoadingText("Fetching Master Data...");
     try {
-      const formData = new FormData();
-      formData.append('api_key', 'Administrator');
-      formData.append('api_secret', 'Friday2000@T');
-      formData.append('app_key', parameters.app_key);
-      formData.append('client_secret', 'cfd619c909');
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+        api_secret: import.meta.env.VITE_APP_API_SECRET,
+        app_key: import.meta.env.VITE_APP_APP_KEY,
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+      };
+
+      const data = await fetchMasterDetails(payload);
+      setMasterData(data);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to fetch master data." });
+      console.error("Error fetching master details:", error);
+    } finally {
+      setLoading(false);
+      setLoadingText(null);
+    }
+  };
+
+  const handleFetchUserDetails = async () => {
+    setLoading(true);
+    setLoadingText("Fetching User Data...");
+    try {
+      if (!masterData?.access_token) throw new Error("Fetch master API first.");
+
+      const { username, password } = parameters;
+      const app_key = import.meta.env.VITE_APP_APP_KEY;
+
+      if (!username || !password) throw new Error("Missing username or password.");
+
+      const data = await fetchUserDetails(masterData, { username, password, app_key });
+
+      setUserData(data);
+
+      toast({ title: "Success", description: "User details fetched successfully!" });
+    } catch (error) {
+      toast({ title: "Error", description: "An error occurred while fetching user data." });
+      console.error("Error fetching user details:", error);
+    } finally {
+      setLoading(false);
+      setLoadingText(null);
+    }
+  };
+
+
+  const handleFetchEncryptedKey = async () => {
+    setLoading(true);
+    setLoadingText("Fetching Encrypted Key...");
+
+    try {
+      if (!masterData?.access_token) throw new Error("Fetch master API first.");
+
+      const formData = new URLSearchParams();
+      formData.append("text_for_encryption", import.meta.env.VITE_APP_TEXT_FOR_ENCRYPTION);
 
       const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
+        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt_for_user",
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Bearer ${masterData?.access_token}`,
+          },
+        }
       );
-      setMasterData(response.data);
-    } catch (error: any) {
-      console.error('Error fetching master details:', error.response?.data || error.message);
-      toast({ title: 'Error', description: 'Failed to fetch master data.' });
+
+      console.log("API Response:", response);
+
+      const { data } = response;
+      console.log("Response Data:", data);
+
+      // Extracting the encrypted key correctly
+      const encryptedKey = data?.data || "No encrypted key returned";
+      console.log("Extracted Encrypted Key:", encryptedKey);
+
+      setEncryptedKey(encryptedKey);
+
+      toast({ title: "Success", description: "Encrypted key fetched successfully!" });
+    } catch (error) {
+      console.error("Error fetching encrypted key:", error);
+
+      if (axios.isAxiosError(error)) {
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
+      }
+
+      toast({ title: "Error", description: "Failed to fetch encrypted key." });
     } finally {
-      setLoading(null);
+      setLoading(false);
+      setLoadingText(null);
     }
   };
 
-  const fetchUserDetails = async () => {
+  const handleFetchEncryptedToken = async () => {
+    setLoading(true);
+    setLoadingText("Fetching Encrypted Token...");
+  
     try {
-      if (!masterData || !masterData?.data?.access_token) {
-        throw new Error("Fetch master API first");
-      }
-      const accessToken = masterData.data.access_token;
-
-      const { username, password, app_key } = parameters;
-
-      if (!username || !password || !app_key) {
-        throw new Error("Missing required parameters: username, password, or app_key.");
-      }
-
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
-      formData.append('app_key', app_key);
-      formData.append('client_secret', 'cfd619c909');
-
+      if (!masterData?.access_token) throw new Error("Fetch master API first.");
+      if (!encryptedKey) throw new Error("Fetch encrypted key first.");
+  
+      // Preparing form data
+      const formData = new URLSearchParams();
+      formData.append("encrypted_key", encryptedKey); // Using the previously fetched encrypted key
+  
+      // Making API call (Removing unsafe Cookie header)
       const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users',
+        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_encrypt_for_user",
         formData,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Bearer ${masterData?.access_token}`,
           },
+          responseType: "json", // Ensuring JSON response
         }
       );
-      setUserData(response.data);
-    } catch (error: any) {
-      console.error('Error fetching user details:', error.response?.data || error.message);
-      toast({ title: 'Error', description: 'Failed to fetch user data.' });
+  
+      console.log("Encrypted Token API Response:", response);
+  
+      const { data } = response;
+      console.log("Response Data:", data);
+  
+      // Extracting the actual access_token from the response
+      if (data?.data?.token?.access_token) {
+        setEncryptedTokenData(data.data.token.access_token);
+        console.log("Extracted Encrypted Token:", data.data.token.access_token);
+      } else {
+        console.warn("Warning: No access token found in response!", data);
+        setEncryptedTokenData("No access token returned");
+      }
+  
+      toast({ title: "Success", description: "Encrypted token fetched successfully!" });
+    } catch (error) {
+      console.error("Error fetching encrypted token:", error);
+  
+      if (axios.isAxiosError(error)) {
+        console.error("Response data:", error.response?.data);
+        console.error("Response status:", error.response?.status);
+      }
+  
+      toast({ title: "Error", description: "Failed to fetch encrypted token." });
     } finally {
-      setLoading(null);
+      setLoading(false);
+      setLoadingText(null);
     }
   };
+  
 
-  const fetchUserEncryptedKey = async () => {
-    if (!masterData || !masterData.data?.access_token) {
-      throw new Error("Fetch master API first");
-    }
 
-    const accessToken = masterData.data.access_token;
-
-    setLoading('Fetching Encrypted Key...');
-    try {
-      const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt_for_user',
-        new URLSearchParams({
-          text_for_encryption: 'hyrin@htsqatar.com::Friday2000@T::MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==',
-        }),
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      setEncryptedKey(response.data.message);
-    } catch (error: any) {
-      console.error('Error fetching user encryption key:', error.response?.data || error.message);
-      toast({ title: 'Error', description: 'Failed to fetch user encryption key.' });
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const fetchUserEncryptedToken = async () => {
-    if (!masterData || !masterData.data?.access_token) {
-      throw new Error("Fetch master API first");
-    }
-
-    if (!encryptedKey) {
-      throw new Error("Fetch master encryption key first");
-    }
-
-    const accessToken = masterData.data.access_token;
-
-    setLoading('Encrypting Data...');
-    try {
-      const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_encrypt_for_user',
-        new URLSearchParams({
-          encrypted_key: encryptedKey,
-        }),
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      setEncryptedTokenData(response.data);
-    } catch (error: any) {
-      console.error('Error fetching encrypted token data:', error.response?.data || error.message);
-      toast({ title: 'Error', description: 'Failed to fetch encrypted token data.' });
-    } finally {
-      setLoading(null);
-    }
-  };
 
   return (
-    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
+    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
@@ -183,6 +224,7 @@ const UserEncryptionAuth: React.FC = () => {
           />
         </div>
 
+
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
           <input
@@ -192,6 +234,7 @@ const UserEncryptionAuth: React.FC = () => {
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
 
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
@@ -216,77 +259,85 @@ const UserEncryptionAuth: React.FC = () => {
         </div>
 
         <Button
-          onClick={fetchMasterDetails}
+          onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
           disabled={!!loading}
         >
-          {loading === 'Fetching Master Details...' ? 'Loading...' : 'Proceed'}
+          proceed
         </Button>
 
         {masterData && (
-          <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-            <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
-            <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-              {JSON.stringify(masterData, null, 2)}
-            </pre>
-          </div>
-        )}
+          <>
+            <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+              <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
+              <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                {JSON.stringify(masterData, null, 2)}
+              </pre>
+            </div>
 
-        {masterData && (
-          <Button
-            onClick={fetchUserDetails}
-            className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-            disabled={!!loading}
-          >
-            {loading === 'Fetching User Details...' ? 'Loading...' : 'Fetch User Data'}
-          </Button>
-        )}
+            <Button
+              onClick={handleFetchUserDetails}
+              onMouseEnter={handleMouseEnter}
+              className=" mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
+              disabled={!!loading}
+            >
+              Fetch User Data
+            </Button>
 
-        {userData && (
-          <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-            <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">User Data:</h2>
-            <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-              {JSON.stringify(userData, null, 2)}
-            </pre>
-          </div>
-        )}
+            {userData && (
+              <>
+                <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                  <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">User Data:</h2>
+                  <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                    {JSON.stringify(userData, null, 2)}
+                  </pre>
+                </div>
 
-        {userData && (
-          <Button
-            onClick={fetchUserEncryptedKey}
-            className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-            disabled={!!loading}
-          >
-            {loading === 'Fetching Encrypted Key...' ? 'Loading...' : 'Fetch User Encrypted Key'}
-          </Button>
-        )}
+                <Button
+                  onClick={handleFetchEncryptedKey}
+                  onMouseEnter={handleMouseEnter}
+                  className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
+                  disabled={!!loading}
+                >
+                  Fetch Encrypted Key
+                </Button>
+                {loading && <p>{loadingText}</p>}
 
-        {encryptedKey && (
-          <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-            <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Encrypted Key:</h2>
-            <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-              {encryptedKey}
-            </pre>
-          </div>
-        )}
 
-        {encryptedKey && (
-          <Button
-            onClick={fetchUserEncryptedToken}
-            className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-            disabled={!!loading}
-          >
-            {loading === 'Fetching Encrypted Token...' ? 'Loading...' : 'Fetch Encrypted Token'}
-          </Button>
-        )}
+                {encryptedKey && (
+                  <>
+                    <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                      <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Encrypted Key:</h2>
+                      <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                      {JSON.stringify(encryptedKey, null, 2)} 
+                      </pre>
+                    </div>
 
-        {encryptedTokenData && (
-          <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-            <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Encrypted Token Data:</h2>
-            <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-              {JSON.stringify(encryptedTokenData, null, 2)}
-            </pre>
-          </div>
+                    
+                      <Button
+                        onClick={handleFetchEncryptedToken}
+                        className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
+                        disabled={loading || !encryptedKey}
+                      >
+                        {loading ? "Fetching Encrypted Token..." : "Fetch Encrypted Token"}
+                      </Button>
+                    
+
+                    {encryptedTokenData && (
+                      <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                        <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Encrypted Token Data:</h2>
+                        <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                        {JSON.stringify(encryptedTokenData, null, 2)} 
+                        </pre>
+                      </div>
+                    )}
+
+
+                  </>
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
     </div>
