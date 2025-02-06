@@ -48,10 +48,10 @@ const MasterEncryptionAuth: React.FC = () => {
       setLoading(false);
     }
   };
-
   const fetchEncryptedKey = async () => {
     if (!masterData || !masterData?.access_token) {
-      throw new Error("Fetch master API first");
+      console.error("Error: Fetch master API first");
+      return;
     }
   
     const accessToken = masterData.access_token;
@@ -59,7 +59,7 @@ const MasterEncryptionAuth: React.FC = () => {
     setLoading("Fetching Encrypted Key...");
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt`,
+        `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.2fa.generate_encrypted_token`,
         new URLSearchParams({
           text_for_encryption: import.meta.env.VITE_APP_TEXT_FOR_ENCRYPTION,
         }),
@@ -71,17 +71,19 @@ const MasterEncryptionAuth: React.FC = () => {
         }
       );
   
-      console.log("Raw Encrypted Key Response:", response.data); // Debugging
+      console.log("🔍 Raw API Response:", response);  
+      console.log("📌 Extracted Data:", response.data); 
   
-      // Extract the key properly
-      if (response.data && response.data.data) {
+      // Extract encrypted key correctly
+      if (response?.data?.data) {
         setEncryptedKey(response.data.data);
+        console.log("✅ Encrypted Key Set:", response.data.data);
       } else {
-        console.error("Unexpected Response Format:", response.data);
+        console.error("❌ Unexpected Response Format:", response.data);
       }
     } catch (error: any) {
       console.error(
-        "Error fetching master encryption key:",
+        "⚠️ Error fetching encrypted key:",
         error.response?.data || error.message
       );
     } finally {
@@ -89,7 +91,9 @@ const MasterEncryptionAuth: React.FC = () => {
     }
   };
   
-
+  
+  
+  
   const fetchEncryptedData = async () => {
     if (!masterData || !masterData?.access_token) {
       throw new Error("Fetch master API first");

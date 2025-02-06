@@ -107,12 +107,14 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                 }
             );
     
-            console.log("Password update response:", response.data); // ✅ Log response
+            console.log("Password update response:", response.data);
     
+            // ✅ Display success message in UI
             toast({
-                title: "Password Updated",
-                description: response.data?.message || "Your password has been updated successfully.",
+                title: "Success",
+                description: "Password updated successfully!",
             });
+    
         } catch (error: any) {
             console.error("Error updating password:", error);
     
@@ -125,7 +127,6 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
         }
     };
     
-
 
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
