@@ -3,6 +3,12 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 
+interface EnableUserParams {
+  username: string;
+  email: string;
+  mobile_no: string;
+}
+
 const EnableUserAuth: React.FC = () => {
   const [title, setTitle] = useState<string>("Enable User Account");
   const [description, setDescription] = useState<string>(
@@ -12,17 +18,8 @@ const EnableUserAuth: React.FC = () => {
     "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_user_enable"
   );
 
-  // Parameters for master details (hidden from UI)
-  const masterDetailsParams = {
-    api_key: "Administrator",
-    api_secret: "Friday2000@T",
-    app_key:
-      "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-    client_secret: "cfd619c909",
-  };
-
   // Parameters for enabling user (entered by user)
-  const [enableUserParams, setEnableUserParams] = useState({
+  const [enableUserParams, setEnableUserParams] = useState<EnableUserParams>({
     username: "",
     email: "",
     mobile_no: "",
@@ -41,64 +38,90 @@ const EnableUserAuth: React.FC = () => {
 
   // Fetch master details
   const handleFetchMasterDetails = async () => {
-    setLoadingMasterData(true);
+    setLoadingMasterData(true); // Corrected loading state
     try {
-      const data = await fetchMasterDetails(masterDetailsParams);
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+        api_secret: import.meta.env.VITE_APP_API_SECRET,
+        app_key: import.meta.env.VITE_APP_APP_KEY,
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+      };
+
+      // Pass the payload to the fetchMasterDetails function
+      const data = await fetchMasterDetails(payload); // Updated to pass parameters
       setMasterData(data);
     } catch (error: any) {
-      console.error(
-        "Error fetching master details:",
-        error.response?.data || error.message
-      );
-      alert("Failed to fetch master details. Please try again.");
+      console.error("Error fetching master details:", error.message);
     } finally {
-      setLoadingMasterData(false);
+      setLoadingMasterData(false); // Corrected loading state
     }
   };
 
-  // Enable user account
-  const enableUserAccount = async () => {
-    if (!masterData?.data?.access_token) {
-      alert("Please fetch the master data first.");
-      return;
-    }
+// Enable user account
+const enableUserAccount = async () => {
+  if (!masterData?.access_token) {
+    alert("Please fetch the master data first.");
+    return;
+  }
 
-    const { username, email, mobile_no } = enableUserParams;
-    if (!username || !email || !mobile_no) {
-      alert("Please fill out all required fields.");
-      return;
-    }
+  const { username, email, mobile_no } = enableUserParams;
 
-    setLoadingEnableUser(true);
-    try {
-      const formData = new FormData();
-      formData.append("username", username);
-      formData.append("email", email);
-      formData.append("mobile_no", mobile_no);
+  if (!username || !email || !mobile_no) {
+    alert("Please fill out all required fields.");
+    return;
+  }
 
-      const response = await axios.post(api, formData, {
-        headers: {
-          Authorization: `Bearer ${masterData.data.access_token}`,
-        },
-      });
-      setEnableUserData(response.data);
-      alert("User account enabled successfully.");
-    } catch (error: any) {
-      console.error(
-        "Error enabling user account:",
-        error.response?.data || error.message
-      );
+  setLoadingEnableUser(true);
 
-      // Custom message for user feedback
-      if (error.response?.data?.message === "User not found") {
-        alert("The user was not found. Please check the provided details.");
+  try {
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("email", email);
+    formData.append("mobile_no", mobile_no);
+
+    console.log("Sending data to API:", { username, email, mobile_no });
+
+    const response = await axios.post(api, formData, {
+      headers: {
+        Authorization: `Bearer ${masterData.access_token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    // Log the response for debugging
+    console.log("API Response:", response);
+
+    // Handle the API response
+    if (response.data && typeof response.data === "object") {
+      const { message, user_count } = response.data;
+
+      if (message && typeof user_count === "number") {
+        setEnableUserData(response.data); // Store the response data
+        alert(message); // Display the success message
       } else {
-        alert("Failed to enable user account. Please try again.");
+        alert("Unexpected response format. Please check the API response structure.");
+        console.error("Unexpected response:", response.data);
       }
-    } finally {
-      setLoadingEnableUser(false);
+    } else {
+      alert("Unexpected response format. Response is not an object.");
+      console.error("Unexpected response format:", response);
     }
-  };
+  } catch (error: any) {
+    // Handle server and network errors
+    if (error.response) {
+      console.error("Error response from server:", error.response);
+      const errorMessage = error.response.data?.message || "An unknown error occurred.";
+      alert(`Failed to enable user account: ${errorMessage}`);
+    } else {
+      console.error("Network or other error:", error);
+      alert("Failed to enable user account. Please check your network connection.");
+    }
+  } finally {
+    setLoadingEnableUser(false);
+  }
+};
+
+
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
@@ -160,7 +183,7 @@ const EnableUserAuth: React.FC = () => {
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
           disabled={loadingMasterData}
         >
-          {loadingMasterData ? "Fetching Master Data..." : "Fetch Master Data"}
+          {loadingMasterData ? "Fetching Master Data..." : "proceed"}
         </Button>
 
         {masterData && (
@@ -175,7 +198,7 @@ const EnableUserAuth: React.FC = () => {
           </div>
         )}
 
-        {masterData?.data?.access_token && (
+        {masterData?.access_token && (
           <>
             <Button
               onClick={enableUserAccount}

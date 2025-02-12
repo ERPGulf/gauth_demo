@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
+
 const UploadFilesAuth: React.FC = () => {
   const location = useLocation();
   const [title, setTitle] = useState<string>('Upload File');
   const [description, setDescription] = useState<string>('Uploads a file to the server');
-  const [api, setApi] = useState<string>(
-    'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.upload_file'
-  );
+  const [api, setApi] = useState<string>(`${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.upload_file`);
+  
   const [parameters, setParameters] = useState<Record<string, string>>({
     doctype: 'Backend Server Settings',
     docname: 'Backend Server Settings',
@@ -35,16 +35,13 @@ const UploadFilesAuth: React.FC = () => {
     setLoading('Fetching Master Details...');
     try {
       const formData = new FormData();
-      formData.append('api_key', 'Administrator');
-      formData.append('api_secret', 'Friday2000@T');
-      formData.append(
-        'app_key',
-        'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ=='
-      );
-      formData.append('client_secret', 'cfd619c909');
+      formData.append('api_key', import.meta.env.VITE_APP_gAUTH_API_KEY);
+      formData.append('api_secret', import.meta.env.VITE_APP_API_SECRET);
+      formData.append('app_key', import.meta.env.VITE_APP_APP_KEY);
+      formData.append('client_secret', import.meta.env.VITE_APP_CLIENT_SECRET);
 
       const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
+        `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure`,
         formData,
         {
           headers: {
@@ -90,7 +87,6 @@ const UploadFilesAuth: React.FC = () => {
       setUploadLoading(null);
     }
   };
-
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">

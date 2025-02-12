@@ -4,41 +4,31 @@ import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
 import { useToast } from '../ui/use-toast';
-interface Parameters {
-    api_key: string;
-    api_secret: string;
-    app_key: string;
-    client_secret: string;
-}
+
+
 
 const UpdatePasswordUserTokenAuth: React.FC = () => {
     const location = useLocation();
-    const [title, setTitle] = useState<string>(" Update User Password Using Token");
-    const [description, setDescription] = useState<string>("This API endpoint updates a user's password using an authorization token. It is typically used in systems where password updates are facilitated by sending tokens to authenticated users.");
-    const [api, setApi] = useState<string>(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_usertoken'
+    const { toast } = useToast();
+
+    const [title, setTitle] = useState<string>("Update Password Using User Token");
+    const [description, setDescription] = useState<string>(
+        "This API endpoint updates a user's password using an authorization token."
     );
-    const [parameters, setParameters] = useState<Parameters>({
-        api_key: "Administrator",
-        api_secret: "Friday2000@T",
-        app_key:
-            "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-        client_secret: "cfd619c909",
+    const [api, setApi] = useState<string>(`${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_usertoken`);
+
+    const [parameters, setParameters] = useState({
+        username: '',
+        password: '',
     });
+
 
     const [masterData, setMasterData] = useState<any>(null);
-    const [loading, setLoading] = useState<string | null>(null);
-    const [userParameters, setUserParameters] = useState({
-        username: "",
-        password: "",
-        app_key:
-            "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-    });
+    const [loading, setLoading] = useState<string | boolean | null>(null);
+    
     const [userData, setUserData] = useState<any>(null);
-    const [newPassword, setNewPassword] = useState<string>(""); // Add state
+    const [newPassword, setNewPassword] = useState<string>("");
 
-
-    const { toast } = useToast();
     useEffect(() => {
         if (location.state && location.state.masterApiData) {
             const { title, description, api, parameters } = location.state.masterApiData;
@@ -50,47 +40,64 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
     }, [location.state]);
 
     const handleFetchMasterDetails = async () => {
-        setLoading("Fetching Master Details...");
+        setLoading(true);
         try {
-            const data = await fetchMasterDetails(parameters);
+            const payload = {
+                api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+                api_secret: import.meta.env.VITE_APP_API_SECRET,
+                app_key: import.meta.env.VITE_APP_APP_KEY,  // Used internally, not displayed
+                client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+            };
+
+            const data = await fetchMasterDetails(payload);
             setMasterData(data);
-        } catch (error: any) {
-            console.error("Error fetching master details:", error.message);
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to fetch master data." });
+            console.error("Error fetching master details:", error);
         } finally {
-            setLoading(null);
+            setLoading(false);
         }
     };
 
     const handleFetchUserDetails = async () => {
-        setLoading("Fetching User Details...");
+        setLoading(true);
         try {
-            const data = await fetchUserDetails(masterData, userParameters);
+            if (!masterData?.access_token) throw new Error("Fetch master API first.");
+
+            const { username, password } = parameters;
+            const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
+
+            if (!username || !password) throw new Error("Missing username or password.");
+
+            const data = await fetchUserDetails(masterData, { username, password, app_key });
+
             setUserData(data);
-        } catch (error: any) {
+            console.log("User Details:", data);
+            toast({ title: "Success", description: "User details fetched successfully!" });
+        } catch (error) {
+            toast({ title: "Error", description: "An error occurred." });
             console.error("Error fetching user details:", error);
         } finally {
-            setLoading(null);
+            setLoading(false);
         }
     };
 
     const handleUpdatePassword = async () => {
         setLoading("Updating Password...");
         try {
-            // Ensure user token is available
             const userToken = userData?.data?.token?.access_token;
             if (!userToken) {
                 throw new Error("User token not found. Please fetch user details first.");
             }
-
-            // Validate new password
+    
             if (!newPassword.trim()) {
                 throw new Error("New password cannot be empty.");
             }
-
-            // Make API call to update the password
+            console.log("API Endpoint:", api);
+    
             const response = await axios.post(
-                'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_usertoken',
-                new URLSearchParams({ password: newPassword }), // Payload
+                api,
+                new URLSearchParams({ password: newPassword }),
                 {
                     headers: {
                         Authorization: `Bearer ${userToken}`,
@@ -99,31 +106,27 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                     withCredentials: true,
                 }
             );
-
-            // Log and display success notification
-            console.log("Password updated successfully:", response.data);
+    
+            console.log("Password update response:", response.data);
+    
+            // ✅ Display success message in UI
             toast({
-                title: "Password Updated",
-                description: "Your password has been updated successfully.",
+                title: "Success",
+                description: "Password updated successfully!",
             });
+    
         } catch (error: any) {
-            // Handle and log errors
-            console.error("Error updating password:", {
-                message: error.message,
-                response: error.response?.data || null,
-            });
-
-            const errorMessage =
-                error.response?.data?.message || "An error occurred while updating the password.";
+            console.error("Error updating password:", error);
+    
             toast({
                 title: "Update Failed",
-                description: errorMessage,
+                description: error.response?.data?.message || "An error occurred while updating the password.",
             });
         } finally {
-            setLoading(null); // Reset loading state
+            setLoading(null);
         }
     };
-
+    
 
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
@@ -189,93 +192,69 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                 </Button>
 
                 {masterData && (
-                    <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-                        <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
-                        <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-                            {JSON.stringify(masterData, null, 2)}
-                        </pre>
-                    </div>
-                )}
-
-                {masterData && (
-                    <div className="mt-6">
-                        <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4">Fetch User Details</h2>
-
-                        {/* Username Input */}
-                        <div className="mb-4">
-                            <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">Username</label>
-                            <input
-                                type="text"
-                                value={userParameters.username}
-                                onChange={(e) =>
-                                    setUserParameters((prev) => ({ ...prev, username: e.target.value }))
-                                }
-                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                    <>
+                        <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                            <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
+                            <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                                {JSON.stringify(masterData, null, 2)}
+                            </pre>
                         </div>
 
-                        {/* Password Input */}
-                        <div className="mb-4">
-                            <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">Password</label>
-                            <input
-                                type="password"
-                                value={userParameters.password}
-                                onChange={(e) =>
-                                    setUserParameters((prev) => ({ ...prev, password: e.target.value }))
-                                }
-                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Fetch User Data Button */}
                         <Button
                             onClick={handleFetchUserDetails}
-                            className="mt-4 w-full py-2 sm:py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
+
+                            className=" mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
                             disabled={!!loading}
                         >
-                            {loading === "Fetching User Details..." ? "Loading..." : "Fetch User Data"}
+                            Fetch User Data
                         </Button>
-
                         {userData && (
-                            <div className="bg-slate-300 p-3 sm:p-4 mt-6 rounded-lg shadow overflow-x-auto">
-                                <h2 className="text-base sm:text-lg font-bold mb-2 text-gray-800">User Data:</h2>
+                            <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                                <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">User Data:</h2>
                                 <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
                                     {JSON.stringify(userData, null, 2)}
                                 </pre>
                             </div>
                         )}
 
-                        {userData && (
-                            <div className="mt-6">
-                                <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4">Update Password</h2>
 
-                                {/* New Password Input */}
-                                <div className="mb-4">
-                                    <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">New Password</label>
-                                    <input
-                                        type="password"
-                                        placeholder="Enter new password"
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-
-                                {/* Update Password Button */}
-                                <Button
-                                    onClick={handleUpdatePassword}
-                                    className="mt-4 w-full py-2 sm:py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                                    disabled={!!loading}
-                                >
-                                    {loading === "Updating Password..." ? "Loading..." : "Update Password"}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                    </>
                 )}
 
-            </div>
 
+
+                {userData && (
+                    <div className="mt-6">
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4">Update Password</h2>
+
+                        {/* New Password Input */}
+                        <div className="mb-4">
+                            <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">New Password</label>
+                            <input
+                                type="password"
+                                placeholder="Enter new password"
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Update Password Button */}
+                        <Button
+                            onClick={handleUpdatePassword}
+                            className="mt-4 w-full py-2 sm:py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
+                            disabled={!!loading}
+                        >
+                            {loading === "Updating Password..." ? "Loading..." : "Update Password"}
+                        </Button>
+                    </div>
+                )}
+            </div>
         </div>
+
+
+
+
+
     );
 
 

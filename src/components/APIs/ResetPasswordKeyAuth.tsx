@@ -2,171 +2,126 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
-
+import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 
 const ResetPasswordKeyAuth: React.FC = () => {
   const location = useLocation();
   const [title, setTitle] = useState<string>('Update Password Using Reset Key API');
   const [description, setDescription] = useState<string>('This API updates the password for a user using a reset key. It requires a valid access token for authentication, along with the new password, reset key, and username as input parameters.');
-  const [api, setApi] = useState<string>(
-    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key",
-  );
-  const [parameters, setParameters] = useState<Record<string, string>>({
-    api_key: 'Administrator',
-    api_secret: 'Friday2000@T',
-    app_key:
-      'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==',
-  });
+  const [api, setApi] = useState<string>(`${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key`);
+  const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
 
   const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState<string | boolean | null>(null);
   const [resetKeyData, setResetKeyData] = useState<any>(null);
   const [newPassword, setNewPassword] = useState<string>('');
   const [resetKey, setResetKey] = useState<string>('');
   const [username, setUsername] = useState<string>('');
-
   const [mobile, setMobile] = useState('');
 
   useEffect(() => {
     if (location.state && location.state.masterApiData) {
-      const { title, description, api, parameters } = location.state.masterApiData;
+      const { title, description, api } = location.state.masterApiData;
       setTitle(title);
       setDescription(description);
       setApi(api);
-      setParameters(parameters);
+
     }
   }, [location.state]);
 
-  const fetchMasterDetails = async () => {
-    setLoading('Fetching Master Details...');
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
     try {
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+        api_secret: import.meta.env.VITE_APP_API_SECRET,
+        app_key: import.meta.env.VITE_APP_APP_KEY,
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+      };
+
+      // Pass the payload to the fetchMasterDetails function
+      const data = await fetchMasterDetails(payload); // Updated to pass parameters
+      setMasterData(data);
+    } catch (error: any) {
+      console.error("Error fetching master details:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateResetPasswordKey = async () => {
+    setLoading('Generating Reset Password Key...');
+    try {
+      if (!username || !mobile) {
+        throw new Error('Please enter a valid username and mobile number.');
+      }
+
+      if (!masterData?.access_token) {
+        throw new Error('Fetch master API first');
+      }
+
+      const accessToken = masterData.access_token;
       const formData = new FormData();
-      formData.append('api_key', parameters.api_key);
-      formData.append('api_secret', parameters.api_secret);
-      formData.append('app_key', parameters.app_key);
-      formData.append('client_secret', 'cfd619c909');
+      formData.append('user', username);
+      formData.append('mobile', mobile);
 
       const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
+        `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.g_generate_reset_password_key`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
-      setMasterData(response.data);
+
+      setResetKeyData(response.data);
+      alert(`Reset key has been sent for username ${username}`);
     } catch (error: any) {
-      console.error('Error fetching master details:', error.response?.data || error.message);
+      console.error('Error generating reset password key:', error.response?.data || error.message);
+      alert(`Failed to generate reset password key: ${error.message}`);
     } finally {
       setLoading(null);
     }
   };
 
-
-
-  const generateResetPasswordKey = async () => {
-    setLoading('Generating Reset Password Key...');
-    try {
-      // Validate username and mobile
-      if (!username || !mobile) {
-        throw new Error('Please enter a valid username and mobile number.');
-      }
-
-      // Check for access_token
-      if (!masterData || !masterData?.data?.access_token) {
-        throw new Error('Fetch master API first');
-      }
-
-      const accessToken = masterData.data.access_token;
-
-      // Create FormData instance and append fields
-      const formData = new FormData();
-      formData.append('user', username); // Use username instead of email
-      formData.append('mobile', mobile); // Use the correct mobile number input
-
-      // Make the API request
-      const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_generate_reset_password_key',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-
-      // Display a success message or log the response
-      console.log('Reset password key generated successfully:', response.data);
-
-      // Set reset key data (response contains confirmation or key info)
-      setResetKeyData(response.data);
-      alert(`Reset key has been sent for username ${username}`);
-    } catch (error: any) {
-      // Improved error handling
-      console.error(
-        'Error generating reset password key:',
-        error.response?.data || error.message
-      );
-      alert(`Failed to generate reset password key: ${error.message}`);
-    } finally {
-      setLoading(null); // Reset loading state
-    }
-  };
-
-
   const updatePassword = async () => {
     setLoading('Updating Password...');
     try {
-      // Validate required inputs
-      if (!newPassword) {
-        throw new Error('Please enter a new password.');
-      }
-      if (!resetKey) {
-        throw new Error('Please enter the reset key.');
-      }
-      if (!username) {
-        throw new Error('Please enter the username.');
+      if (!newPassword || !resetKey || !username) {
+        throw new Error('All fields are required.');
       }
 
-      // Check for access_token
-      if (!masterData || !masterData?.data?.access_token) {
+      if (!masterData?.access_token) {
         throw new Error('Fetch master API first to get the access token.');
       }
 
-      const accessToken = masterData.data.access_token;
+      const accessToken = masterData.access_token;
 
-      // Prepare data using URLSearchParams
       const requestData = new URLSearchParams();
       requestData.append('new_password', newPassword);
       requestData.append('reset_key', resetKey);
       requestData.append('username', username);
 
-      // Make the API request
       const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key',
+        `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key`,
         requestData,
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded', // Correct content type for URLSearchParams
+            'Content-Type': 'application/x-www-form-urlencoded',
             Authorization: `Bearer ${accessToken}`,
           },
         }
       );
+      console.log('Response:', response.data);
 
-      // Success response handling
-      console.log('Password updated successfully:', response.data);
       alert('Password updated successfully.');
     } catch (error: any) {
-      // Improved error handling
-      console.error(
-        'Error updating password:',
-        error.response?.data || error.message
-      );
+      console.error('Error updating password:', error.response?.data || error.message);
       alert(`Failed to update password: ${error.message}`);
     } finally {
-      setLoading(null); // Reset loading state
+      setLoading(null);
     }
   };
 
@@ -205,22 +160,19 @@ const ResetPasswordKeyAuth: React.FC = () => {
           />
         </div>
 
+        {/* Parameters (Responsive Grid) */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {Object.entries(parameters).map(([key, value]) => (
-              <div key={key} className="flex flex-col">
-                <label className="font-bold text-gray-700 mb-1 sm:mb-2">{key}:</label>
+          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Parameters
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {parameters.map((param, index) => (
+              <div key={index}>
                 <input
                   type="text"
-                  value={value}
-                  onChange={(e) =>
-                    setParameters((prev) => ({
-                      ...prev,
-                      [key]: e.target.value,
-                    }))
-                  }
-                  className="p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={param}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-100 focus:outline-none"
                 />
               </div>
             ))}
@@ -229,7 +181,7 @@ const ResetPasswordKeyAuth: React.FC = () => {
 
 
         <Button
-          onClick={fetchMasterDetails}
+          onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
           disabled={!!loading}
         >

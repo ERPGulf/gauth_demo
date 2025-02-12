@@ -2,73 +2,70 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
+import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 
 const TestRedirectAuth: React.FC = () => {
   const location = useLocation();
   const [title, setTitle] = useState<string>('Test Redirect URL');
-  const [description, setDescription] = useState<string>('Tests the redirection functionality of a URL');
+  const [description, setDescription] = useState<string>(
+    'Tests the redirection functionality of a URL'
+  );
   const [api, setApi] = useState<string>(
-    'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_redirect_url'
+    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.firebase_sms.test_redirect_url"
   );
   const [parameters, setParameters] = useState<Record<string, string>>({
-    full_name: 'Guest',
-    user_id: 'Guest',
+    full_name: '',
+    user_id: '',
   });
 
   const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   const [testRedirectResponse, setTestRedirectResponse] = useState<any>(null);
-  const [testRedirectLoading, setTestRedirectLoading] = useState<string | null>(null);
+  const [testRedirectLoading, setTestRedirectLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    if (location.state && location.state.masterApiData) {
+    if (location.state?.masterApiData) {
       const { title, description, parameters } = location.state.masterApiData;
-      setTitle(title);
-      setDescription(description);
-      setParameters(parameters);
+      setTitle(title || 'Test Redirect URL');
+      setDescription(description || 'Tests the redirection functionality of a URL');
+      setParameters(parameters || {});
     }
   }, [location.state]);
 
-  const fetchMasterDetails = async () => {
-    setLoading('Fetching Master Details...');
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('api_key', 'Administrator');
-      formData.append('api_secret', 'Friday2000@T');
-      formData.append(
-        'app_key',
-        'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ=='
-      );
-      formData.append('client_secret', 'cfd619c909');
+      const payload = {
+        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY || '',
+        api_secret: import.meta.env.VITE_APP_API_SECRET || '',
+        app_key: import.meta.env.VITE_APP_APP_KEY || '',
+        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET || '',
+      };
 
-      const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      setMasterData(response.data);
+      if (!payload.api_key || !payload.api_secret || !payload.app_key || !payload.client_secret) {
+        throw new Error('Environment variables are missing.');
+      }
+
+      const data = await fetchMasterDetails(payload);
+      setMasterData(data);
     } catch (error: any) {
-      console.error('Error fetching master details:', error.response?.data || error.message);
+      console.error('Error fetching master details:', error.message);
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
   const testRedirectingUrl = async () => {
-    if (!masterData || !masterData.data?.access_token) {
-      throw new Error('Fetch master API first');
+    if (!masterData || !masterData.access_token) {
+      console.error('Fetch master API first');
+      return;
     }
-
-    const accessToken = masterData.data.access_token;
-
-    setTestRedirectLoading('Testing redirecting URL...');
+  
+    const accessToken = masterData.access_token;
+  
+    setTestRedirectLoading(true);
     try {
-      const response = await axios.get(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_redirect_url', {
+      const response = await axios.get(api, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -77,12 +74,16 @@ const TestRedirectAuth: React.FC = () => {
       });
       setTestRedirectResponse(response.data);
     } catch (error: any) {
-      console.error('Error testing redirecting URL:', error.response?.data || error.message);
+      console.error('Error testing redirecting URL:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
     } finally {
-      setTestRedirectLoading(null);
+      setTestRedirectLoading(false);
     }
   };
-
+  
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
@@ -139,7 +140,7 @@ const TestRedirectAuth: React.FC = () => {
         </div>
 
         <Button
-          onClick={fetchMasterDetails}
+          onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
           disabled={!!loading}
         >

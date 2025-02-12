@@ -68,6 +68,8 @@ const EnableUserAuth = lazy(() => import("@/components/APIs/EnableUserAuth"));
 const IsUserAvailableAuth = lazy(() => import("@/components/APIs/IsUserAvailableAuth"));
 const UpdatePasswordAuth = lazy(() => import("@/components/APIs/UpdatePasswordAuth"));
 const UpdatePasswordUsertokenAuth = lazy(() => import("@/components/APIs/UpdatePasswordUsertokenAuth"));
+const LoginAuth = lazy(() => import("@/components/APIs/LoginAuth"));
+
 
 
 
@@ -161,6 +163,7 @@ const Router = () => {
         <Route path="TestRedirectAuth" element={<TestRedirectAuth />} />
         <Route path="IsApiRequestAuth" element={<IsApiRequestAuth />} />
         <Route path="LogDetailsAuth" element={<LogDetailsAuth />} />
+        <Route path="LoginAuth" element={<LoginAuth />} />
         </Route>
 
 

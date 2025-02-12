@@ -9,14 +9,13 @@ const RandomPasswordAuth: React.FC = () => {
     "Generates a secure random password"
   );
   const [api, setApi] = useState<string>(
-    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_random_password"
+    `${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.generate_random_password`
   );
   const [parameters, setParameters] = useState({
-    api_key: "Administrator",
-    api_secret: "Friday2000@T",
-    app_key:
-      "MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==",
-    client_secret: "cfd619c909",
+    api_key: import.meta.env.VITE_APP_gAUTH_API_KEY || "",
+    api_secret: import.meta.env.VITE_APP_API_SECRET || "",
+    app_key: import.meta.env.VITE_APP_APP_KEY || "",
+    client_secret: import.meta.env.VITE_APP_CLIENT_SECRET || "",
   });
 
   const [masterData, setMasterData] = useState<any>(null);
@@ -41,7 +40,7 @@ const RandomPasswordAuth: React.FC = () => {
   };
 
   const generateRandomPassword = async () => {
-    if (!masterData?.data?.access_token) {
+    if (!masterData?.access_token) {
       alert("Please fetch the master data first.");
       return;
     }
@@ -50,7 +49,7 @@ const RandomPasswordAuth: React.FC = () => {
     try {
       const response = await axios.post(api, null, {
         headers: {
-          Authorization: `Bearer ${masterData.data.access_token}`,
+          Authorization: `Bearer ${masterData.access_token}`,
         },
       });
       setRandomPasswordData(response.data);
@@ -64,6 +63,7 @@ const RandomPasswordAuth: React.FC = () => {
       setLoadingPassword(false);
     }
   };
+
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
@@ -138,7 +138,7 @@ const RandomPasswordAuth: React.FC = () => {
           </div>
         )}
 
-        {masterData?.data?.access_token && (
+        {masterData?.access_token && (
           <>
             <Button
               onClick={generateRandomPassword}

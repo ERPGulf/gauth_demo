@@ -1,8 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+
 const ApiList: React.FC = () => {
   const navigate = useNavigate();
+
+
 
   // API Definitions
   const apis = {
@@ -14,6 +17,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/MasterAuth',
     },
 
@@ -25,6 +29,7 @@ const ApiList: React.FC = () => {
         user_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/UserAuth',
     },
     masterEncryptionApi: {
@@ -35,6 +40,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/MasterEncryptionAuth',
     },
     userEncryptionApi: {
@@ -45,6 +51,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/UserEncryptionAuth',
     },
 
@@ -56,6 +63,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/IsUserAvailableAuth',
     },
 
@@ -67,6 +75,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/CreateUserAuth',
     },
     updatepasswordApi: {
@@ -77,6 +86,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/UpdatePasswordAuth',
     },
     deleteuserApi: {
@@ -87,6 +97,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'DELETE',
       targetPage: '/api/UserAuth',
     },
     enableuserApi: {
@@ -97,6 +108,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/EnableUserAuth',
     },
     updatepasswordusingusertokenApi: {
@@ -107,6 +119,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/UpdatePasswordUsingUserTokenAuth',
     },
     generateresetpasswordkeyApi: {
@@ -117,6 +130,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/ ResetPasswordKeyAuth',
     },
 
@@ -128,6 +142,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/ResetPasswordKeyAuth',
     },
     logdetailsofuserusingusertokenApi: {
@@ -138,6 +153,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/LogDetailsAuth',
     },
     checkcountryrestrictionApi: {
@@ -148,6 +164,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/CountryRestriction',
     },
     checkaccountbalanceApi: {
@@ -158,6 +175,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/AccountBalanceAuth',
     },
 
@@ -169,6 +187,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/CustomerDetailsAuth',
     },
 
@@ -180,6 +199,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/RandomPasswordAuth',
     },
 
@@ -191,6 +211,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/UploadFilesAuth',
     },
     TestRediectApi: {
@@ -201,6 +222,7 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'POST',
       targetPage: '/api/TestRedirectAuth',
     },
     IsApiRequestApi: {
@@ -211,7 +233,20 @@ const ApiList: React.FC = () => {
         api_secret: '',
         app_key: '',
       },
+      method: 'GET',
       targetPage: '/api/IsApiRequestAuth',
+    },
+
+    LoginApi: {
+      title: 'Login',
+      api: 'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_token_encrypt_for_user_2fa',
+      parameters: {
+        api_key: '',
+        api_secret: '',
+        app_key: '',
+      },
+      method: 'GET',
+      targetPage: '/api/LoginAuth',
     },
 
 
@@ -239,11 +274,26 @@ const ApiList: React.FC = () => {
             key={key}
             className=" bg-gray-100 p-4 sm:p-6 rounded-lg shadow-md transition-transform transform hover:scale-105"
           >
-            <h2 className="text-lg  md:text-xl font-bold text-gray-800 mb-4">{api.title}</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg md:text-xl font-bold text-gray-800">{api.title}</h2>
+              <span
+                className={`text-xs font-semibold text-white px-2 py-1 rounded-md ml-2 ${api.method === "POST"
+                    ? "bg-blue-500"
+                    : api.method === "GET"
+                      ? "bg-green-500"
+                      : api.method === "PUT"
+                        ? "bg-violet-500"
+                        : "bg-red-500"
+                  }`}
+              >
+                {api.method}
+              </span>
+            </div>
+
             <Button
               type="submit"
               onClick={() => handleApiClick(key as keyof typeof apis)}
-              className="px-4 py-2  bg-primary/90  text-white font-semibold rounded-md shadow-lg transform transition-transform duration-300 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+              className="mt-4 px-4 py-2  bg-primary/90  text-white font-semibold rounded-md shadow-lg transform transition-transform duration-300 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
             >
               Submit
             </Button>

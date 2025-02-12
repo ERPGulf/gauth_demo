@@ -1,116 +1,89 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { useToast } from '../ui/use-toast';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Add toast styles
 import { Button } from "@/components/ui/button";
+import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 
 const UserAuth: React.FC = () => {
     const location = useLocation();
     const { toast } = useToast();
 
-    const [title, setTitle] = useState<string>('Generate User Token API');
-    const [description, setDescription] = useState<string>('Fetches the user-specific token');
-    const [apiUrl, setApiUrl] = useState<string>(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users'
-    );
-    const [parameters, setParameters] = useState<Record<string, string>>({
+    const [title, setTitle] = useState('Generate User Token API');
+    const [description, setDescription] = useState('Fetches the user-specific token');
+    const [apiUrl, setApiUrl] = useState(`${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users`);
+    
+    const [parameters, setParameters] = useState({
         username: '',
         password: '',
-        app_key: 'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ==',
     });
-    const [masterData, setMasterData] = useState<any>(null);
-    const [userData, setUserData] = useState<any>(null);
-    const [loading, setLoading] = useState<string | null>(null);
+
+    const [masterData, setMasterData] = useState<{ access_token?: string } | null>(null);
+    const [userData, setUserData] = useState<Record<string, any> | null>(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (location.state && location.state.userApiData) {
+        if (location.state?.userApiData) {
             const { title, description, api, parameters } = location.state.userApiData;
             setTitle(title);
             setDescription(description);
             setApiUrl(api);
-            setParameters(parameters);
+            setParameters({ username: parameters.username || '', password: parameters.password || '' });
         }
     }, [location.state]);
 
     const handleMouseEnter = () => {
-        if (!masterData || !masterData.data?.access_token) {
+        if (!masterData?.access_token) {
             toast({ title: 'Warning', description: 'Please fetch master data first' });
         }
     };
 
-    const fetchMasterDetails = async () => {
-        setLoading("Fetching Master Details...");
+    const handleFetchMasterDetails = async () => {
+        setLoading(true);
         try {
-            const formData = new FormData();
-            formData.append("api_key", "Administrator");
-            formData.append("api_secret", "Friday2000@T");
-            formData.append("app_key", parameters.app_key);
-            formData.append("client_secret", "cfd619c909");
-
-            const response = await axios.post(
-                'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
-            console.log("Fetched Master Data:", response.data);
-            setMasterData(response.data);
-        } catch (error: any) {
-            console.error("Error fetching master details:", error.response?.data || error.message);
+            const payload = {
+                api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+                api_secret: import.meta.env.VITE_APP_API_SECRET,
+                app_key: import.meta.env.VITE_APP_APP_KEY,  // Used internally, not displayed
+                client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+            };
+    
+            const data = await fetchMasterDetails(payload);
+            setMasterData(data);
+        } catch (error) {
             toast({ title: "Error", description: "Failed to fetch master data." });
+            console.error("Error fetching master details:", error);
         } finally {
-            setLoading(null);
+            setLoading(false);
         }
     };
-
-    const fetchUserDetails = async () => {
-        setLoading("Fetching User Details...");
+    
+    const handleFetchUserDetails = async () => {
+        setLoading(true);
         try {
-            if (!masterData || !masterData?.data?.access_token) {
-                throw new Error("Fetch master API first");
-            }
-            const accessToken = masterData.data.access_token;
-
-            const { username, password, app_key } = parameters;
-
-            if (!username || !password || !app_key) {
-                throw new Error("Missing required parameters: username, password, or app_key.");
-            }
-
-            const formData = new FormData();
-            formData.append("username", username);
-            formData.append("password", password);
-            formData.append("app_key", app_key);
-            formData.append("client_secret", "cfd619c909");
-
-            const response = await axios.post(
-                'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users', formData, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-
-            console.log("Fetched User Data:", response.data);
-            setUserData(response.data);
-        } catch (error: any) {
-            console.error("Error fetching user details:", {
-                message: error.message,
-                response: error.response?.data || null,
-
-            });
-            const errorMessage = error.response?.data?.message || "An error occurred while fetching user details.";
-            toast({ title: "Error", description: errorMessage });
+            if (!masterData?.access_token) throw new Error("Fetch master API first.");
+    
+            const { username, password } = parameters;
+            const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
+    
+            if (!username || !password) throw new Error("Missing username or password.");
+    
+            const data = await fetchUserDetails(masterData, { username, password, app_key });
+    
+            setUserData(data);
+            toast({ title: "Success", description: "User details fetched successfully!" });
+        } catch (error) {
+            toast({ title: "Error", description: "An error occurred." });
+            console.error("Error fetching user details:", error);
         } finally {
-            setLoading(null);
+            setLoading(false);
         }
     };
-
+    
+    
 
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
-            <ToastContainer />
+         
             {/* <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">{title}</h1> */}
             <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
                 <div className="mb-6 sm:mb-8">
@@ -166,7 +139,7 @@ const UserAuth: React.FC = () => {
                 </div>
 
                 <Button
-                    onClick={fetchMasterDetails}
+                    onClick={handleFetchMasterDetails}
                     className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
                     disabled={!!loading}
                 >
@@ -183,7 +156,7 @@ const UserAuth: React.FC = () => {
 
 
                         <Button
-                            onClick={fetchUserDetails}
+                            onClick={handleFetchUserDetails}
                             onMouseEnter={handleMouseEnter}
                             className=" mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
                             disabled={!!loading}

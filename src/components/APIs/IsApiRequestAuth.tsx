@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
+import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
+
 const IsApiRequestAuth: React.FC = () => {
   const location = useLocation();
   const [title, setTitle] = useState<string>('Check API Request"');
@@ -15,7 +17,7 @@ const IsApiRequestAuth: React.FC = () => {
   });
 
   const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] =  useState(false);
   const [isApiRequestResponse, setIsApiRequestResponse] = useState<any>(null);
   const [isApiRequestLoading, setIsApiRequestLoading] = useState<string | null>(null);
 
@@ -28,41 +30,32 @@ const IsApiRequestAuth: React.FC = () => {
     }
   }, [location.state]);
 
-  const fetchMasterDetails = async () => {
-    setLoading('Fetching Master Details...');
-    try {
-      const formData = new FormData();
-      formData.append('api_key', 'Administrator');
-      formData.append('api_secret', 'Friday2000@T');
-      formData.append(
-        'app_key',
-        'MzM1ZjdkMmUzMzgxNjM1NWJiNWQwYzE3YjY3YjMyZDU5N2E3ODRhZmE5NjU0N2RiMWVjZGE0ZjE4OGM1MmM1MQ=='
-      );
-      formData.append('client_secret', 'cfd619c909');
-
-      const response = await axios.post(
-        'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      setMasterData(response.data);
-    } catch (error: any) {
-      console.error('Error fetching master details:', error.response?.data || error.message);
-    } finally {
-      setLoading(null);
-    }
-  };
-
+  const handleFetchMasterDetails = async () => {
+      setLoading(true);
+      try {
+        const payload = {
+          api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
+          api_secret: import.meta.env.VITE_APP_API_SECRET,
+          app_key: import.meta.env.VITE_APP_APP_KEY,
+          client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
+        };
+    
+        // Pass the payload to the fetchMasterDetails function
+        const data = await fetchMasterDetails(payload); // Updated to pass parameters
+        setMasterData(data);
+      } catch (error: any) {
+        console.error("Error fetching master details:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
   const isApiRequest = async () => {
-    if (!masterData || !masterData.data?.access_token) {
+    if (!masterData || !masterData?.access_token) {
       throw new Error('Fetch master API first');
     }
 
-    const accessToken = masterData.data.access_token;
+    const accessToken = masterData.access_token;
 
     setIsApiRequestLoading('Checking API Request...');
     try {
@@ -138,7 +131,7 @@ const IsApiRequestAuth: React.FC = () => {
         </div>
 
         <Button
-          onClick={fetchMasterDetails}
+          onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
           disabled={!!loading}
         >
