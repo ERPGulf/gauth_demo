@@ -22,7 +22,14 @@ const CreateUserAuth: React.FC = () => {
   const [createUserData, setCreateUserData] = useState<any>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [loadingMasterData, setLoadingMasterData] = useState<boolean>(false);
-
+  const [resetKey, setResetKey] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [passwordUpdateResponse, setPasswordUpdateResponse] = useState<any>(null);
+  const [loadingPasswordUpdate, setLoadingPasswordUpdate] = useState<boolean>(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [resendOtpResponse, setResendOtpResponse] = useState<any>(null);
+  const [otpSent, setOtpSent] = useState<boolean>(false); // Track if OTP was sent
 
   useEffect(() => {
     if (location.state && location.state.userApiData) {
@@ -60,6 +67,8 @@ const CreateUserAuth: React.FC = () => {
   // Create User
   const createUser = async () => {
     setLoading("Creating User...");
+
+
     try {
       // Check for masterData and access token
       if (!masterData || !masterData.access_token) {
@@ -92,9 +101,85 @@ const CreateUserAuth: React.FC = () => {
       // Update state on success
       setCreateUserData(response.data);
       console.log("User created successfully:", response.data);
+      setOtpSent(true);
     } catch (error: any) {
       console.error("Error creating user:", error.response?.data || error.message);
       alert(error.response?.data?.message || error.message || "Failed to create user.");
+    } finally {
+      setLoading(null);
+    }
+  };
+
+
+  // Update Password using Reset Key
+  const updatePasswordWithResetKey = async () => {
+    setLoadingPasswordUpdate(true);
+    try {
+      if (!masterData || !masterData.access_token) {
+        throw new Error("Fetch master API first");
+      }
+
+      if (!username || !resetKey || !newPassword) {
+        throw new Error("All fields are required: Username, Reset Key, and New Password");
+      }
+
+      const accessToken = masterData.access_token;
+      const formData = new URLSearchParams();
+      formData.append("new_password", newPassword);
+      formData.append("reset_key", resetKey);
+      formData.append("username", username);
+
+      const response = await axios.post(
+        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      setPasswordUpdateResponse(response.data);
+      console.log("Password updated successfully:", response.data);
+      alert("Password updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating password:", error.response?.data || error.message);
+      alert(error.response?.data?.message || error.message || "Failed to update password.");
+    } finally {
+      setLoadingPasswordUpdate(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading("Resending OTP...");
+    try {
+      if (!parameters.email) {
+        throw new Error("Email is required to resend OTP.");
+      }
+
+      const payload = {
+        email: parameters.email,  // Ensure email is passed
+        user: parameters.email,   // Add user parameter if required
+      };
+
+      const response = await axios.post(
+        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.resend_otp_for_reset_key",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${masterData.access_token}`,
+          },
+        }
+      );
+
+      setResendOtpResponse(response.data);
+      setShowOtpInput(true); // Show OTP message UI
+      console.log("OTP resent successfully:", response.data);
+      alert("OTP resent successfully! Please check your email.");
+    } catch (error: any) {
+      console.error("Error resending OTP:", error.response?.data || error.message);
+      alert(error.response?.data?.message || error.message || "Failed to resend OTP.");
     } finally {
       setLoading(null);
     }
@@ -204,35 +289,89 @@ const CreateUserAuth: React.FC = () => {
         {/* Display Master Data */}
         {masterData && (
           <>
-
             <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
               <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
               <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
                 {JSON.stringify(masterData, null, 2)}
               </pre>
+
+              {/* Create User Button */}
+
             </div>
 
-            <div className="mt-4">
+            <>
               <Button
                 onClick={createUser}
-                className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
                 disabled={!!loading}
+                className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
               >
                 {loading === "Creating User..." ? "Creating..." : "Create User"}
               </Button>
-              <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
-                <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Create User Response:</h2>
-                <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
-                  {createUserData ? JSON.stringify(createUserData, null, 2) : "No action yet."}
-                </pre>
-              </div>
+
+              {showOtpInput && (
+                <p className="mt-4 text-center text-blue-600 font-semibold">
+                  OTP sent to your mail, please update password using the OTP.
+                </p>
+              )}
+
+              {showOtpInput && (
+                <Button
+                  onClick={handleResendOtp}
+                  disabled={!!loading}
+                  className="mt-4"
+                >
+                  {loading ? loading : "Resend OTP"}
+                </Button>
+              )}
+            </>
+
+
+
+            
+            {/* OTP Notification */}
+            {showOtpInput && <p className="mt-4 text-center text-blue-600 font-semibold">ResetKey sent to mail</p>}
+
+            {/* Update Password Section */}
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold mb-2">Update Password</h3>
+              <input
+                type="email"
+                placeholder="Username"
+                className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Reset Key"
+                className="mt-4 w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={resetKey}
+                onChange={(e) => setResetKey(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="New Password"
+                className="mt-4 w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <Button onClick={updatePasswordWithResetKey} disabled={loadingPasswordUpdate}
+                className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70">
+                {loadingPasswordUpdate ? "Updating..." : "Submit"}
+              </Button>
             </div>
+
+
           </>
+
         )}
+
+
 
 
       </div>
     </div>
+
   );
 };
 
