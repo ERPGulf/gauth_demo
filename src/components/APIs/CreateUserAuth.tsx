@@ -1,27 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
+import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import API_URL from "@/components/APIs/API-URL";
+
 const CreateUserAuth: React.FC = () => {
-  const location = useLocation();
-
-
-  const [title, setTitle] = useState<string>("Create User");
-  const [description, setDescription] = useState<string>("Create a new user by providing user details.");
-  const [api, setApi] = useState<string>(
-    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_create_user"
-  );
+  const title = "Create User";
+  const description = "Create a new user by providing user details.";
+  const api = `${API_URL.BASE_URL}${API_URL.CREATE_USER}`;
   const [parameters, setParameters] = useState<Record<string, string>>({
     fullname: "",
+    mobile_no: "",
     email: "",
     password: "",
   });
 
   const [masterData, setMasterData] = useState<any>(null);
   const [createUserData, setCreateUserData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | null>(null);
-  const [loadingMasterData, setLoadingMasterData] = useState<boolean>(false);
+  const [loading, setLoading] = useState<string | boolean | null>(null);
   const [resetKey, setResetKey] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [username, setUsername] = useState<string>("");
@@ -29,49 +26,31 @@ const CreateUserAuth: React.FC = () => {
   const [loadingPasswordUpdate, setLoadingPasswordUpdate] = useState<boolean>(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [resendOtpResponse, setResendOtpResponse] = useState<any>(null);
-  const [otpSent, setOtpSent] = useState<boolean>(false); // Track if OTP was sent
-
-  useEffect(() => {
-    if (location.state && location.state.userApiData) {
-      const { title, description, api, parameters } = location.state.userApiData;
-      setTitle(title);
-      setDescription(description);
-      setApi(api);
-      setParameters(parameters);
-    }
-  }, [location.state]);
+  const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
 
   // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoadingMasterData(true);
+    setLoading("Fetching Master Details...");
     try {
-      const payload = {
-        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
-        api_secret: import.meta.env.VITE_APP_API_SECRET,
-        app_key: import.meta.env.VITE_APP_APP_KEY,
-        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
-      };
-
-      // Pass the payload to the fetchMasterDetails function
+      const payload = getMasterDataPayload();
       const data = await fetchMasterDetails(payload);
-      setMasterData(data); // Correctly update masterData
-
-    } catch (error: any) {
-      console.error("Error fetching master details:", error.message);
+      setMasterData(data);
+    } catch (error) {
+      console.error("Error fetching master details:", error);
     } finally {
-      setLoadingMasterData(false);
+      setLoading(null);
     }
   };
 
   // Create User
   const createUser = async () => {
     setLoading("Creating User...");
-
-
     try {
       // Check for masterData and access token
-      if (!masterData || !masterData.access_token) {
+      if (!masterData?.access_token) {
         throw new Error("Fetch master API first");
       }
       console.log("Access Token:", masterData.access_token);
@@ -110,19 +89,16 @@ const CreateUserAuth: React.FC = () => {
     }
   };
 
-
   // Update Password using Reset Key
   const updatePasswordWithResetKey = async () => {
     setLoadingPasswordUpdate(true);
     try {
-      if (!masterData || !masterData.access_token) {
+      if (!masterData?.access_token) {
         throw new Error("Fetch master API first");
       }
-
       if (!username || !resetKey || !newPassword) {
         throw new Error("All fields are required: Username, Reset Key, and New Password");
       }
-
       const accessToken = masterData.access_token;
       const formData = new URLSearchParams();
       formData.append("new_password", newPassword);
@@ -130,7 +106,7 @@ const CreateUserAuth: React.FC = () => {
       formData.append("username", username);
 
       const response = await axios.post(
-        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key",
+        `${API_URL.BASE_URL}${API_URL.UPDATE_PASSWORD_USING_RESETKEY}`,
         formData,
         {
           headers: {
@@ -139,7 +115,6 @@ const CreateUserAuth: React.FC = () => {
           },
         }
       );
-
       setPasswordUpdateResponse(response.data);
       console.log("Password updated successfully:", response.data);
       alert("Password updated successfully!");
@@ -151,81 +126,71 @@ const CreateUserAuth: React.FC = () => {
     }
   };
 
-  const handleResendOtp = async () => {
-    setLoading("Resending OTP...");
+  const handleResendOTP = async () => {
+    setError(null);
+    setSuccessMessage(null); // Reset messages before the request
+
     try {
       if (!parameters.email) {
-        throw new Error("Email is required to resend OTP.");
+        setError("Email is required to resend OTP.");
+        return;
       }
 
-      const payload = {
-        email: parameters.email,  // Ensure email is passed
-        user: parameters.email,   // Add user parameter if required
-      };
-
-      const response = await axios.post(
-        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.resend_otp_for_reset_key",
-        payload,
+      const response = await axios.get(
+        `${API_URL.BASE_URL}${API_URL.RESEND_SIGNUP_OTP}`,
         {
+          params: { user: parameters.email },
           headers: {
-            Authorization: `Bearer ${masterData.access_token}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Bearer ${masterData?.access_token}`, // Ensure a valid access token
           },
         }
       );
-
+      setShowOtpInput(true);
       setResendOtpResponse(response.data);
-      setShowOtpInput(true); // Show OTP message UI
-      console.log("OTP resent successfully:", response.data);
-      alert("OTP resent successfully! Please check your email.");
-    } catch (error: any) {
-      console.error("Error resending OTP:", error.response?.data || error.message);
-      alert(error.response?.data?.message || error.message || "Failed to resend OTP.");
-    } finally {
-      setLoading(null);
+      setSuccessMessage("OTP has been resent to your email.");
+    } catch (err) {
+      console.error("Error resending OTP:", err);
+      setError("Failed to resend OTP. Please try again.");
     }
   };
-
-
-
-
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
-
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
         {/* Title Input */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
+          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Title
+          </label>
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-        {/* Description Input */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Description
+          </label>
           <input
             type="text"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-        {/* API URL Input */}
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
+          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            API URL
+          </label>
           <input
             type="text"
             value={api}
-            onChange={(e) => setApi(e.target.value)}
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-        {/* User Data Input Fields */}
         <div className="mb-6 sm:mb-8">
           <h3 className="text-lg font-semibold text-blue-500 mb-4">Enter User Data</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -275,8 +240,6 @@ const CreateUserAuth: React.FC = () => {
             </div>
           </div>
         </div>
-
-
         {/* Fetch Master Details Button */}
         <Button
           onClick={handleFetchMasterDetails}
@@ -285,7 +248,6 @@ const CreateUserAuth: React.FC = () => {
         >
           {loading === "Fetching Master Details..." ? "Fetching..." : "Proceed"}
         </Button>
-
         {/* Display Master Data */}
         {masterData && (
           <>
@@ -294,11 +256,8 @@ const CreateUserAuth: React.FC = () => {
               <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
                 {JSON.stringify(masterData, null, 2)}
               </pre>
-
               {/* Create User Button */}
-
             </div>
-
             <>
               <Button
                 onClick={createUser}
@@ -308,28 +267,40 @@ const CreateUserAuth: React.FC = () => {
                 {loading === "Creating User..." ? "Creating..." : "Create User"}
               </Button>
 
+              {/* Display Create User Data */}
+              {createUserData && (
+                <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                  <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Create User Data:</h2>
+                  <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                    {JSON.stringify(createUserData, null, 2)}
+                  </pre>
+                </div>
+              )}
+
               {showOtpInput && (
                 <p className="mt-4 text-center text-blue-600 font-semibold">
                   OTP sent to your mail, please update password using the OTP.
                 </p>
               )}
 
-              {showOtpInput && (
-                <Button
-                  onClick={handleResendOtp}
-                  disabled={!!loading}
-                  className="mt-4"
-                >
-                  {loading ? loading : "Resend OTP"}
-                </Button>
+              <Button onClick={handleResendOTP} disabled={!!loading} className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70">
+                {loading ? loading : "Resend OTP"}
+              </Button>
+              {successMessage && <p className="text-green-600">{successMessage}</p>}
+              {error && <p className="text-red-600">{error}</p>}
+
+              {/* Display Resend OTP Response */}
+              {resendOtpResponse && (
+                <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                  <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Resend OTP Response:</h2>
+                  <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                    {JSON.stringify(resendOtpResponse, null, 2)}
+                  </pre>
+                </div>
               )}
             </>
-
-
-
-            
             {/* OTP Notification */}
-            {showOtpInput && <p className="mt-4 text-center text-blue-600 font-semibold">ResetKey sent to mail</p>}
+            {otpSent && <p className="mt-4 text-center text-blue-600 font-semibold">ResetKey sent to mail</p>}
 
             {/* Update Password Section */}
             <div className="mt-6">
@@ -355,23 +326,28 @@ const CreateUserAuth: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-              <Button onClick={updatePasswordWithResetKey} disabled={loadingPasswordUpdate}
-                className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70">
+              <Button
+                onClick={updatePasswordWithResetKey}
+                disabled={loadingPasswordUpdate}
+                className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
+              >
                 {loadingPasswordUpdate ? "Updating..." : "Submit"}
               </Button>
+
+              {/* Display Password Update Response */}
+              {passwordUpdateResponse && (
+                <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                  <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Password Update Response:</h2>
+                  <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
+                    {JSON.stringify(passwordUpdateResponse, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
-
-
           </>
-
         )}
-
-
-
-
       </div>
     </div>
-
   );
 };
 

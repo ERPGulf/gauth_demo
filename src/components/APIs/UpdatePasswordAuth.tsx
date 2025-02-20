@@ -2,50 +2,33 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
+import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import API_URL from "@/components/APIs/API-URL";
 
 const UpdatePasswordAuth: React.FC = () => {
-  const [title, setTitle] = useState<string>("Update User Password");
-  const [description, setDescription] = useState<string>(
-    "Updates a user's password by providing username and new password."
-  );
-  const [api, setApi] = useState<string>(
-    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password"
-  );
- 
-
-  // Parameters for updating password (entered by user)
+  const title = "Update User Password";
+  const description = "Updates a user's password by providing username and new password.";
+  const api = `${API_URL.BASE_URL}${API_URL.UPDATE_PASSWORD}`;
   const [updatePasswordParams, setUpdatePasswordParams] = useState({
     username: "",
     password: "",
   });
-
   const [masterData, setMasterData] = useState<any>(null);
   const [updatePasswordData, setUpdatePasswordData] = useState<any>(null);
  const [loading, setLoading] = useState(false);
   const [loadingUpdatePassword, setLoadingUpdatePassword] = useState<boolean>(false);
-
-  // Fetch master details
-  const handleFetchMasterDetails = async () => {
-     setLoading(true);
-     try {
-       const payload = {
-         api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
-         api_secret: import.meta.env.VITE_APP_API_SECRET,
-         app_key: import.meta.env.VITE_APP_APP_KEY,
-         client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
-       };
-   
-       // Pass the payload to the fetchMasterDetails function
-       const data = await fetchMasterDetails(payload); // Updated to pass parameters
-       setMasterData(data);
-     } catch (error: any) {
-       console.error("Error fetching master details:", error.message);
-     } finally {
-       setLoading(false);
-     }
-   };
-
-  // Update user password
+   const handleFetchMasterDetails = async () => {
+          setLoading(true);
+          try {
+              const payload = getMasterDataPayload();
+              const data = await fetchMasterDetails(payload);
+              setMasterData(data);
+          } catch (error) {
+              console.error("Error fetching master details:", error);
+          } finally {
+              setLoading(false);
+          }
+      };
   const updateUserPassword = async () => {
     if (!masterData?.access_token) {
       alert("Please fetch the master data first.");
@@ -85,44 +68,40 @@ const UpdatePasswordAuth: React.FC = () => {
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
+          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label htmlFor="Description"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
           <input
             type="text"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
+          <label htmlFor="API URL"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
           <input
             type="text"
             value={api}
-            onChange={(e) => setApi(e.target.value)}
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            readOnly
+           className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-
-        <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Update Password Parameters</label>
+        <div className=" mb-6 sm:mb-8">
+          <label htmlFor="Parameters"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Update Password Parameters</label>
           <h5 className="text-gray-500">(please enter valid user details)</h5>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className=" grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {Object.entries(updatePasswordParams).map(([key, value]) => (
               <div key={key} className="flex items-center gap-4 mb-2">
-                <label className="font-bold text-gray-700 mb-1 sm:mb-2">{key}:</label>
+                <label htmlFor="Parametrs" className=" font-bold text-gray-700 mb-1 sm:mb-2">{key}:</label>
                 <input
                   type="text"
                   value={value}

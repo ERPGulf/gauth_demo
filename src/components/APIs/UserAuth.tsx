@@ -1,52 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useToast } from '../ui/use-toast';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
-
+import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import API_URL from "@/components/APIs/API-URL";
 const UserAuth: React.FC = () => {
-    const location = useLocation();
-    const { toast } = useToast();
 
-    const [title, setTitle] = useState('Generate User Token API');
-    const [description, setDescription] = useState('Fetches the user-specific token');
-    const [apiUrl, setApiUrl] = useState(`${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users`);
-    
+    const { toast } = useToast();
+    const title = 'Generate User Token API';
+    const description = 'Fetches the user-specific token';
+    const api = `${API_URL.BASE_URL}${API_URL.USER_TOKEN}`;
+
     const [parameters, setParameters] = useState({
         username: '',
         password: '',
     });
-
     const [masterData, setMasterData] = useState<{ access_token?: string } | null>(null);
     const [userData, setUserData] = useState<Record<string, any> | null>(null);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (location.state?.userApiData) {
-            const { title, description, api, parameters } = location.state.userApiData;
-            setTitle(title);
-            setDescription(description);
-            setApiUrl(api);
-            setParameters({ username: parameters.username || '', password: parameters.password || '' });
-        }
-    }, [location.state]);
 
     const handleMouseEnter = () => {
         if (!masterData?.access_token) {
             toast({ title: 'Warning', description: 'Please fetch master data first' });
         }
     };
-
     const handleFetchMasterDetails = async () => {
         setLoading(true);
         try {
-            const payload = {
-                api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
-                api_secret: import.meta.env.VITE_APP_API_SECRET,
-                app_key: import.meta.env.VITE_APP_APP_KEY,  // Used internally, not displayed
-                client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
-            };
-    
+            const payload = getMasterDataPayload();
             const data = await fetchMasterDetails(payload);
             setMasterData(data);
         } catch (error) {
@@ -56,19 +38,14 @@ const UserAuth: React.FC = () => {
             setLoading(false);
         }
     };
-    
     const handleFetchUserDetails = async () => {
         setLoading(true);
         try {
             if (!masterData?.access_token) throw new Error("Fetch master API first.");
-    
             const { username, password } = parameters;
             const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
-    
             if (!username || !password) throw new Error("Missing username or password.");
-    
             const data = await fetchUserDetails(masterData, { username, password, app_key });
-    
             setUserData(data);
             toast({ title: "Success", description: "User details fetched successfully!" });
         } catch (error) {
@@ -78,12 +55,9 @@ const UserAuth: React.FC = () => {
             setLoading(false);
         }
     };
-    
-    
-
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
-         
+
             {/* <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">{title}</h1> */}
             <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
                 <div className="mb-6 sm:mb-8">
@@ -91,7 +65,7 @@ const UserAuth: React.FC = () => {
                     <input
                         type="text"
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -101,7 +75,7 @@ const UserAuth: React.FC = () => {
                     <input
                         type="text"
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -110,8 +84,8 @@ const UserAuth: React.FC = () => {
                     <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
                     <input
                         type="text"
-                        value={apiUrl}
-                        onChange={(e) => setApiUrl(e.target.value)}
+                        value={api}
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -172,12 +146,10 @@ const UserAuth: React.FC = () => {
                             </div>
                         )}
                     </>
-
                 )}
 
             </div>
         </div>
     );
 };
-
 export default UserAuth;

@@ -1,0 +1,148 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "gAuth API Documentation",
+    "description": "This is an auto-generated Swagger page for gAuth API list",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://gauth.erpgulf.com:4083",
+      "description": "Production Server"
+    }
+  ],
+  "paths": {
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure": {
+      "post": {
+        "summary": "Master API",
+        "description": "Generates a master token securely",
+        "parameters": [
+          {
+            "name": "api_key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "api_secret",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "app_key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": { "example": { "message": "Success" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.backend_server.generate_user_token": {
+      "post": {
+        "summary": "User API",
+        "description": "Generates a user token securely",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "user_secret",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "app_key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": { "example": { "message": "Success" } }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.is_user_available": {
+      "get": {
+        "summary": "Check if User is Available",
+        "description": "Checks if a user is available based on mobile phone and email.",
+        "parameters": [
+          {
+            "name": "mobile_phone",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "user_email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": { "message": "Success" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/method/gauth_erpgulf.backend_server.test_generate_token_encrypt": {
+      "post": {
+        "summary": "Master Encryption API",
+        "description": "Generates an encrypted master token securely",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "api_key": { "type": "string" },
+                  "api_secret": { "type": "string" },
+                  "app_key": { "type": "string" }
+                },
+                "required": ["api_key", "api_secret", "app_key"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": { "message": "Success" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

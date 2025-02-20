@@ -8,7 +8,6 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
-    
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -57,6 +56,8 @@
     "redux": "^5.0.1",
     "redux-persist": "^6.0.0",
     "sonner": "^1.4.41",
+    "swagger-ui": "^5.18.3",
+    "swagger-ui-react": "^5.18.3",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
     "totp-generator": "^1.0.0",

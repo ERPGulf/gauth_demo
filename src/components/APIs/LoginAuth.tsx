@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
-
+import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import API_URL from "@/components/APIs/API-URL";
 interface MasterData {
     access_token: string;
     expires_in: number;
@@ -13,60 +13,33 @@ interface MasterData {
 }
 
 const LoginAuth: React.FC = () => {
-    const location = useLocation();
-
-    const [title, setTitle] = useState("Generate Encrypted 2FA Token for User");
-    const [description, setDescription] = useState(
-        "This API endpoint generates an encrypted token for a user to enable or validate two-factor authentication (2FA). It requires authentication through a Bearer token and session cookies, as well as an encrypted key that contains user-specific or session-specific information."
-    );
-    const [api, setApi] = useState(
-        "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_token_encrypt_for_user_2fa"
-    );
+    const title = "Generate Encrypted 2FA Token for User";
+    const description = "This API endpoint generates an encrypted token for a user to enable or validate two-factor authentication (2FA). It requires authentication through a Bearer token and session cookies, as well as an encrypted key that contains user-specific or session-specific information.";
+    const api = `${API_URL.BASE_URL}${API_URL.GENERATE_2FA_TOKEN}`;
     const [parameters, setParameters] = useState({ email: "", password: "" });
     const [masterData, setMasterData] = useState<MasterData | null>(null);
     const [encryptedKey, setEncryptedKey] = useState("");
-    const [loadingMasterDetails, setLoadingMasterDetails] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [loadingEncryptedKey, setLoadingEncryptedKey] = useState(false);
     const [otp, setOtp] = useState(""); // State to store the OTP input
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-
-    useEffect(() => {
-        if (location.state?.masterApiData) {
-            const { title, description, api } = location.state.masterApiData;
-            setTitle(title);
-            setDescription(description);
-            setApi(api);
-        }
-    }, [location.state]);
-
     const handleFetchMasterDetails = async () => {
-        setLoadingMasterDetails(true);
-        setError(null);
-
+        setLoading(true);
         try {
-            const payload = {
-                api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
-                api_secret: import.meta.env.VITE_APP_API_SECRET,
-                app_key: import.meta.env.VITE_APP_APP_KEY,
-                client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
-            };
-
+            const payload = getMasterDataPayload();
             const data = await fetchMasterDetails(payload);
-            console.log("Fetched Master Details:", data);
             setMasterData(data);
-        } catch (err) {
-            console.error("Error fetching master details:", err);
-            setError("Failed to fetch master details. Please try again.");
+        } catch (error) {
+            console.error("Error fetching master details:", error);
         } finally {
-            setLoadingMasterDetails(false);
+            setLoading(false);
         }
     };
     const handleGenerateEncryptedKey = async () => {
         setLoadingEncryptedKey(true);
         setError(null);
-
         try {
             const { email, password } = parameters;
             const appKey = import.meta.env.VITE_APP_APP_KEY; // Fetch app key from env
@@ -81,7 +54,7 @@ const LoginAuth: React.FC = () => {
             const textForEncryption = `${email}::${password}::${appKey}`;
 
             const response = await axios.post(
-                "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_encrypted_token",
+                `${API_URL.BASE_URL}${API_URL.GENERATE_2FA_TOKEN}`,
                 new URLSearchParams({ text_for_encryption: textForEncryption }), // URL-encoded data
                 {
                     headers: {
@@ -91,7 +64,6 @@ const LoginAuth: React.FC = () => {
                     }
                 }
             );
-
             console.log("Encrypted Key Response:", response.data);
 
             // Extract `data` properly
@@ -120,7 +92,7 @@ const LoginAuth: React.FC = () => {
             }
 
             const response = await axios.post(
-                "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_token_encrypt_for_user_2fa",
+                `${API_URL.BASE_URL}${API_URL.VERIFY_2FA_TOKEN}`,
                 new URLSearchParams({ encrypted_key: encryptedKey }), // URL-encoded data
                 {
                     headers: {
@@ -151,7 +123,7 @@ const LoginAuth: React.FC = () => {
             }
 
             const response = await axios.get(
-                "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.resend_otp",
+                `${API_URL.BASE_URL}${API_URL.RESEND_LOGIN_OTP}`,
                 {
                     params: { user: parameters.email },
                     headers: {
@@ -172,10 +144,9 @@ const LoginAuth: React.FC = () => {
     const handleValidateOTP = async () => {
         setError(null);
         setSuccessMessage(null); // Reset messages before the request
-
         try {
             const response = await axios.post(
-                "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.validate_otp_to_generate_user_token",
+                `${API_URL.BASE_URL}${API_URL.VERIFY_2FA_OTP}`,
                 new URLSearchParams({
                     user: parameters.email,
                     user_otp: otp,
@@ -204,7 +175,7 @@ const LoginAuth: React.FC = () => {
                     <input
                         type="text"
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -214,7 +185,7 @@ const LoginAuth: React.FC = () => {
                     <input
                         type="text"
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -224,7 +195,7 @@ const LoginAuth: React.FC = () => {
                     <input
                         type="text"
                         value={api}
-                        onChange={(e) => setApi(e.target.value)}
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -259,15 +230,13 @@ const LoginAuth: React.FC = () => {
                         </div>
                     </div>
                 </div>
-
-
                 <Button
                     onClick={handleFetchMasterDetails}
                     className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                    disabled={loadingMasterDetails}
-                    aria-busy={loadingMasterDetails}
+                    disabled={loading}
+                    aria-busy={loading}
                 >
-                    {loadingMasterDetails ? "Loading..." : "Fetch Master Details"}
+                    {loading ? "Loading..." : "Fetch Master Details"}
                 </Button>
 
                 {masterData && (
@@ -315,7 +284,6 @@ const LoginAuth: React.FC = () => {
                                         className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="Enter OTP received in email"
                                     />
-
                                     <Button
                                         onClick={handleResendOTP}
                                         className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
@@ -344,10 +312,8 @@ const LoginAuth: React.FC = () => {
                                 {error}
                             </div>
                         )}
-
                     </>
                 )}
-
             </div>
         </div>
     );
