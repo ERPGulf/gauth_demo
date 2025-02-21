@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const DeleteUserComponent: React.FC = () => {
@@ -13,18 +12,18 @@ const DeleteUserComponent: React.FC = () => {
   const [masterData, setMasterData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [deleteResponse, setDeleteResponse] = useState<any>(null);
-  const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+   const handleFetchMasterDetails = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchMasterDetails(); 
+        setMasterData(data);
+      } catch (error) {
+        console.error("Error fetching master details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
   const handleDeleteUser = async () => {
     const { email, mobile_no } = parameters;
     if (!email || !mobile_no) {

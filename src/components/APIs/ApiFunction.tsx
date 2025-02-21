@@ -1,42 +1,31 @@
 import axios, { AxiosError } from "axios";
+import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import API_URL from "@/components/APIs/API-URL";
 
-// Fetch master details
-export const fetchMasterDetails = async (payload: any) => {
+export const fetchMasterDetails = async () => {
   try {
-    const response = await fetch(
-      "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
+    const response = await axios.post(
+      `${API_URL.BASE_URL}${API_URL.APP_TOKEN}`,
+      getMasterDataPayload(),
+      { headers: { "Content-Type": "application/json" } }
     );
 
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Master details fetched successfully:", data.data);
-    return data.data;
+    console.log("Master details fetched successfully:", response.data.data);
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching master details:", error);
     throw error;
   }
 };
 
+
 // Fetch user details
 export const fetchUserDetails = async (
   masterData: any,
   params: { username: string; password: string; app_key: string }
 ) => {
-  // Ensure app_key exists before making the request
   if (!params.app_key) throw new Error("App key is required.");
-
-  // Perform API call (replace this with actual API logic)
-  const response = await fetch("https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users", {
+  const response = await fetch(`${API_URL.BASE_URL}${API_URL.USER_TOKEN}`, {
       method: "POST",
       headers: {
           "Content-Type": "application/json",

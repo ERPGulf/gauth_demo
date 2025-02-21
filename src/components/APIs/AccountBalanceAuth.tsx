@@ -3,7 +3,6 @@ import axios from "axios";
 import { useToast } from '../ui/use-toast';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const AccountBalanceAuth: React.FC = () => {
@@ -12,7 +11,7 @@ const AccountBalanceAuth: React.FC = () => {
   const api = `${API_URL.BASE_URL}${API_URL.ACCOUNT_BALANCE}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
   const [masterData, setMasterData] = useState<any>(null);
-  const [loadingMasterData, setLoadingMasterData] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [accountBalanceData, setAccountBalanceData] = useState<any>(null);
   const [loadingAccountBalance, setLoadingAccountBalance] = useState<boolean>(false);
   const { toast } = useToast();
@@ -22,18 +21,16 @@ const AccountBalanceAuth: React.FC = () => {
     }
   };
   const handleFetchMasterDetails = async () => {
-    setLoadingMasterData(true);
-    try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch master data." });
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoadingMasterData(false);
-    }
-  };
+        setLoading(true);
+        try {
+          const data = await fetchMasterDetails(); 
+          setMasterData(data);
+        } catch (error) {
+          console.error("Error fetching master details:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
   const handleCheckAccountBalance = async () => {
     if (!masterData?.access_token) {
@@ -111,9 +108,9 @@ const AccountBalanceAuth: React.FC = () => {
         <Button
           onClick={handleFetchMasterDetails}
           className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={loadingMasterData}
+          disabled={loading}
         >
-          {loadingMasterData ? "Fetching Master Data..." : "Fetch Master Data"}
+          {loading ? "Fetching Master Data..." : "Fetch Master Data"}
         </Button>
 
         {masterData && (

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const CreateUserAuth: React.FC = () => {
@@ -32,18 +31,17 @@ const CreateUserAuth: React.FC = () => {
 
 
   // Fetch Master Token
-  const handleFetchMasterDetails = async () => {
-    setLoading("Fetching Master Details...");
-    try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(null);
-    }
-  };
+ const handleFetchMasterDetails = async () => {
+       setLoading(true);
+       try {
+         const data = await fetchMasterDetails(); 
+         setMasterData(data);
+       } catch (error) {
+         console.error("Error fetching master details:", error);
+       } finally {
+         setLoading(false);
+       }
+     };
 
   // Create User
   const createUser = async () => {
