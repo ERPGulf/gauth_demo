@@ -15,7 +15,7 @@ const CreateUserAuth: React.FC = () => {
     password: "",
   });
 
-   const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [createUserData, setCreateUserData] = useState(null);
   const [loading, setLoading] = useState<string | boolean | null>(null);
   const [resetKey, setResetKey] = useState<string>("");
@@ -79,24 +79,25 @@ const CreateUserAuth: React.FC = () => {
       setCreateUserData(response.data);
       console.log("User created successfully:", response.data);
       setOtpSent(true);
-    }catch (error: unknown) {
+    } catch (error: unknown) {
       let errorMessage = "Failed to create user.";
-    
+
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-    
+
       if (typeof error === "object" && error !== null && "response" in error) {
         const axiosError = error as { response?: { data?: { message?: string } } };
-        errorMessage = axiosError.response?.data?.message || errorMessage;
+        errorMessage = axiosError.response?.data?.message ?? errorMessage;
+
       }
-    
+
       console.error("Error creating user:", error);
       alert(errorMessage);
     } finally {
       setLoading(null);
     }
-  }    
+  }
 
   // Update Password using Reset Key
   const updatePasswordWithResetKey = async () => {
@@ -129,22 +130,22 @@ const CreateUserAuth: React.FC = () => {
       alert("Password updated successfully!");
     } catch (error: unknown) {
       let errorMessage = "Failed to create user.";
-    
+
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-    
+
       if (typeof error === "object" && error !== null && "response" in error) {
         const axiosError = error as { response?: { data?: { message?: string } } };
-        errorMessage = axiosError.response?.data?.message || errorMessage;
+        errorMessage = axiosError.response?.data?.message ?? errorMessage;
       }
-    
+
       console.error("Error creating user:", error);
       alert(errorMessage);
     } finally {
       setLoading(null);
     }
-  }    
+  }
 
   const handleResendOTP = async () => {
     setError(null);

@@ -21,13 +21,13 @@ const CountryRestriction: React.FC = () => {
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
   const [masterData, setMasterData] = useState<MasterData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [countryRestrictionData, setCountryRestrictionData] = useState<string|null>(null);
+  const [countryRestrictionData, setCountryRestrictionData] = useState<string | null>(null);
   const [countryRestrictionLoading, setCountryRestrictionLoading] = useState<boolean>(false);
 
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const data: MasterData = await fetchMasterDetails(); 
+      const data: MasterData = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -37,9 +37,8 @@ const CountryRestriction: React.FC = () => {
   };
 
   const checkCountryRestriction = async () => {
-    if (!masterData || !masterData.access_token) {
-      console.error("Fetch master API first");
-      return;
+    if (!masterData?.access_token) {
+      throw new Error("Master data or access token is missing.");
     }
 
     const accessToken = masterData.access_token;
@@ -55,7 +54,7 @@ const CountryRestriction: React.FC = () => {
       const axiosError = error as AxiosError;
       console.error(
         "Error checking country restriction:",
-        axiosError.response?.data || axiosError.message
+        axiosError.response?.data ?? axiosError.message
       );
     } finally {
       setCountryRestrictionLoading(false);
@@ -69,7 +68,7 @@ const CountryRestriction: React.FC = () => {
           <input
             type="text"
             value={title}
-           readOnly
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

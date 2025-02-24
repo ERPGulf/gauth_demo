@@ -24,7 +24,6 @@ export const fetchMasterDetails = async (): Promise<{
   }
 };
 
-// ✅ Fetch user details with inline typing for `masterData`
 export const fetchUserDetails = async (
   masterData: { access_token: string }, 
   params: { username: string; password: string; app_key: string }
@@ -47,35 +46,4 @@ export const fetchUserDetails = async (
   return await response.json();
 };
 
-// Fetch encrypted key
-// export const fetchEncryptedKey = async (
-//   masterData: any,
-  
-// ) => {
-//   try {
-//     if (!masterData || !masterData.access_token) {
-//       throw new Error('Fetch master API first to get access token.');
-//     }
 
-//     const accessToken = masterData.access_token;
-//     const textForEncryption = import.meta.env.VITE_APP_TEXT_FOR_ENCRYPTION;
-
-//     const response = await axios.post(
-//       'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_encrypted_token',
-//       new URLSearchParams({ text_for_encryption: textForEncryption }),
-//       {
-//         headers: {
-//           Authorization: `Bearer ${accessToken}`,
-//           'Content-Type': 'application/x-www-form-urlencoded',
-//         },
-//       }
-//     );
-
-//     console.log('Encrypted key fetched successfully:', response.data.message);
-//     return response.data.message;
-//   } catch (error: unknown) {
-//     const err = error as AxiosError<{ message?: string }>;
-//     console.error('Error fetching encrypted key:', err.response?.data?.message || err.message || 'Unknown error');
-//     return null;
-//   }
-// };

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios,{ AxiosError } from "axios";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import API_URL from "@/components/APIs/API-URL";
@@ -47,9 +47,9 @@ const DeleteUserComponent: React.FC = () => {
 
       setDeleteResponse(response.data);
       alert("User deleted successfully.");
-    } catch (error: AxiosError | unknown) {
-      if (error instanceof AxiosError) {
-        console.error("Error deleting user:", error.response?.data || error.message);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error("Error deleting user:", error.response?.data ?? error.message);
       } else if (error instanceof Error) {
         console.error("Error deleting user:", error.message);
       } else {

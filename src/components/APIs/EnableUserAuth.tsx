@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import API_URL from "@/components/APIs/API-URL";
@@ -43,60 +43,54 @@ const EnableUserAuth: React.FC = () => {
 
   // Enable user account
   const enableUserAccount = async () => {
-    if (!masterData?.access_token) {
-      alert("Please fetch the master data first.");
-      return;
-    }
+    if (!masterData?.access_token)
+      return alert("Please fetch the master data first.");
+
     const { username, email, mobile_no } = enableUserParams;
-    if (!username || !email || !mobile_no) {
-      alert("Please fill out all required fields.");
-      return;
-    }
+    if (!username || !email || !mobile_no)
+      return alert("Please fill out all required fields.");
+
     setLoadingEnableUser(true);
+
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("email", email);
+    formData.append("mobile_no", mobile_no);
+
     try {
-      const formData = new FormData();
-      formData.append("username", username);
-      formData.append("email", email);
-      formData.append("mobile_no", mobile_no);
-      console.log("Sending data to API:", { username, email, mobile_no });
       const response = await axios.post(api, formData, {
         headers: {
           Authorization: `Bearer ${masterData.access_token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-      // Log the response for debugging
-      console.log("API Response:", response);
-      // Handle the API response
-      if (response.data && typeof response.data === "object") {
-        const { message, user_count } = response.data;
-        if (message && typeof user_count === "number") {
-          setEnableUserData(response.data); // Store the response data
-          alert(message); // Display the success message
-        } else {
-          alert("Unexpected response format. Please check the API response structure.");
-          console.error("Unexpected response:", response.data);
-        }
-      } else {
-        alert("Unexpected response format. Response is not an object.");
-        console.error("Unexpected response format:", response);
+
+      const data = response.data;
+      if (typeof data !== "object" || data === null) {
+        return alert("Unexpected response format. Response is not an object.");
       }
+
+      const { message, user_count } = data as { message?: string; user_count?: number };
+      if (!message || typeof user_count !== "number") {
+        return alert("Unexpected response format. Please check the API response structure.");
+      }
+
+      setEnableUserData(data);
+      alert(message);
     } catch (error: unknown) {
-      if (error instanceof AxiosError) {
-        // Handle server and network errors
-        if (error.response) {
-          console.error("Error response from server:", error.response);
-          const errorMessage = error.response.data?.message || "An unknown error occurred.";
-          alert(`Failed to enable user account: ${errorMessage}`);
-        } else {
-          console.error("Network or other Axios error:", error.message);
-          alert("Failed to enable user account. Please check your network connection.");
-        }
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message ?? error.message;
+        alert(`Failed to enable user account: ${errorMessage}`);
+      } else if (error instanceof Error) {
+        alert(`Failed to enable user account: ${error.message}`);
+      } else {
+        alert("Failed to enable user account. Please try again.");
       }
     } finally {
       setLoadingEnableUser(false);
     }
   };
+
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
