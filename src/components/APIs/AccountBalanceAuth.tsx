@@ -10,9 +10,9 @@ const AccountBalanceAuth: React.FC = () => {
   const description = "Fetches the account balance:";
   const api = `${API_URL.BASE_URL}${API_URL.ACCOUNT_BALANCE}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [accountBalanceData, setAccountBalanceData] = useState<any>(null);
+  const [accountBalanceData, setAccountBalanceData] = useState<string|null>(null);
   const [loadingAccountBalance, setLoadingAccountBalance] = useState<boolean>(false);
   const { toast } = useToast();
   const handleMouseEnter = () => {
@@ -46,8 +46,8 @@ const AccountBalanceAuth: React.FC = () => {
       });
       setAccountBalanceData(response.data);
       alert("Account balance fetched successfully.");
-    } catch (error: any) {
-      console.error("Error fetching account balance:", error.response?.data || error.message);
+    } catch (error) {
+      console.error("Error fetching account balance:", error);
       alert("Failed to fetch account balance. Please try again.");
     } finally {
       setLoadingAccountBalance(false);
@@ -88,20 +88,20 @@ const AccountBalanceAuth: React.FC = () => {
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {parameters.map((param) => (
-                <div key={param}>
-                  <input
-                    type="text"
-                    value={param}
-                    readOnly
-                    className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-100 focus:outline-none"
-                  />
-                </div>
-              ))}
-            </div>
+          <label htmlFor="Parameters" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+            Parameters
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {parameters.map((param) => (
+              <div key={param}>
+                <input
+                  type="text"
+                  value={param}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-100 focus:outline-none"
+                />
+              </div>
+            ))}
           </div>
         </div>
 

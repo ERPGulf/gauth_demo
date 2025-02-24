@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const CustomerDetailsAuth: React.FC = () => {
@@ -15,49 +14,43 @@ const CustomerDetailsAuth: React.FC = () => {
     user_email: '',
   });
 
-  const [bearerToken, setBearerToken] = useState<string>('');
-  const [masterData, setMasterData] = useState<any>(null);
-  const [customerData, setCustomerData] = useState<any>(null);
+  const [bearerToken] = useState<string>('');
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [customerData, setCustomerData] = useState(null);
   const [customerLoading, setCustomerLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-      setBearerToken(data.access_token); // Set token after fetching master details
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCustomerDetails = async () => {
-    if (!bearerToken) {
-      console.error('Bearer token is not available. Fetch master details first.');
-      return;
-    }
-  
-    setCustomerLoading(true);
-    try {
-      const response = await axios.get(api, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ${bearerToken}`, // Now using bearerToken variable
-        },
-        params: parameters,
-      });
-      setCustomerData(response.data);
-    } catch (error: any) {
-      console.error('Error fetching customer details:', error.response?.data || error.message);
-    } finally {
-      setCustomerLoading(false);
-    }
-  };
-  
+          setLoading(true);
+          try {
+              const data = await fetchMasterDetails();
+              setMasterData(data);
+          } catch (error) {
+              console.error("Error fetching master details:", error);
+          } finally {
+              setLoading(false);
+          }
+      }; 
+      const fetchCustomerDetails = async () => {
+        try {
+          const response = await axios.get(api, {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              Authorization: `Bearer ${bearerToken}`,
+            },
+            params: parameters,
+          });
+          setCustomerData(response.data);
+        } catch (error: unknown) { // Use 'unknown' instead of 'any'
+          if (axios.isAxiosError(error)) { // Check if it's an Axios error
+            console.error('Error fetching customer details:', error.response?.data || error.message);
+          } else {
+            console.error('Unexpected error:', error);
+          }
+        } finally {
+          setCustomerLoading(false);
+        }
+      };
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
 

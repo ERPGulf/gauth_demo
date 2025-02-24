@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 interface EnableUserParams {
   username: string;
@@ -20,8 +19,8 @@ const EnableUserAuth: React.FC = () => {
     email: "",
     mobile_no: "",
   });
-  const [masterData, setMasterData] = useState<any>(null);
-  const [enableUserData, setEnableUserData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [enableUserData, setEnableUserData] = useState<{ message: string } | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingEnableUser, setLoadingEnableUser] = useState<boolean>(false);
   // Handle input changes for enabling user
@@ -33,8 +32,7 @@ const EnableUserAuth: React.FC = () => {
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -83,15 +81,17 @@ const EnableUserAuth: React.FC = () => {
         alert("Unexpected response format. Response is not an object.");
         console.error("Unexpected response format:", response);
       }
-    } catch (error: any) {
-      // Handle server and network errors
-      if (error.response) {
-        console.error("Error response from server:", error.response);
-        const errorMessage = error.response.data?.message || "An unknown error occurred.";
-        alert(`Failed to enable user account: ${errorMessage}`);
-      } else {
-        console.error("Network or other error:", error);
-        alert("Failed to enable user account. Please check your network connection.");
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        // Handle server and network errors
+        if (error.response) {
+          console.error("Error response from server:", error.response);
+          const errorMessage = error.response.data?.message || "An unknown error occurred.";
+          alert(`Failed to enable user account: ${errorMessage}`);
+        } else {
+          console.error("Network or other Axios error:", error.message);
+          alert("Failed to enable user account. Please check your network connection.");
+        }
       }
     } finally {
       setLoadingEnableUser(false);
@@ -109,7 +109,7 @@ const EnableUserAuth: React.FC = () => {
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        
+
         <div className="mb-6 sm:mb-8">
           <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
           <input

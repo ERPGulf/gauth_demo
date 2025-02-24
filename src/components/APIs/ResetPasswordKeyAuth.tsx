@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const ResetPasswordKeyAuth: React.FC = () => {
@@ -10,9 +9,8 @@ const ResetPasswordKeyAuth: React.FC = () => {
   const description = 'This API updates the password for a user using a reset key. It requires a valid access token for authentication, along with the new password, reset key, and username as input parameters.';
   const api = `${API_URL.BASE_URL}${API_URL.UPDATE_PASSWORD_USING_RESETKEY}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | boolean | null>(null);
-  const [resetKeyData, setResetKeyData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null); const [loading, setLoading] = useState<string | boolean | null>(null);
+  const [resetKeyData, setResetKeyData] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState<string>('');
   const [resetKey, setResetKey] = useState<string>('');
   const [username, setUsername] = useState<string>('');
@@ -20,8 +18,7 @@ const ResetPasswordKeyAuth: React.FC = () => {
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -55,9 +52,17 @@ const ResetPasswordKeyAuth: React.FC = () => {
       );
       setResetKeyData(response.data);
       alert(`Reset key has been sent for username ${username}`);
-    } catch (error: any) {
-      console.error('Error generating reset password key:', error.response?.data || error.message);
-      alert(`Failed to generate reset password key: ${error.message}`);
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error("Error generating reset password key:", errorMessage);
+      alert(`Failed to generate reset password key: ${errorMessage}`);
     } finally {
       setLoading(null);
     }
@@ -92,10 +97,20 @@ const ResetPasswordKeyAuth: React.FC = () => {
       console.log('Response:', response.data);
 
       alert('Password updated successfully.');
-    } catch (error: any) {
-      console.error('Error updating password:', error.response?.data || error.message);
-      alert(`Failed to update password: ${error.message}`);
-    } finally {
+    }
+
+    catch (error: unknown) {
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      console.error("Error updating password:", errorMessage);
+      alert(`Failed to update password: ${errorMessage}`);
+    }
+    finally {
       setLoading(null);
     }
   };
@@ -113,7 +128,7 @@ const ResetPasswordKeyAuth: React.FC = () => {
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description"className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
           <input
             type="text"
             value={description}

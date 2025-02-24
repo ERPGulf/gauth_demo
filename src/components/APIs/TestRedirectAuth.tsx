@@ -2,30 +2,32 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
-
+interface RedirectResponse {
+  status: string;
+  url?: string;
+  redirect_url?: string;
+}
 const TestRedirectAuth: React.FC = () => {
   const title = 'Test Redirect URL';
   const description = 'Tests the redirection functionality of a URL';
   const api = `${API_URL.BASE_URL}${API_URL.TEST_REDIRECT}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
+ const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [testRedirectResponse, setTestRedirectResponse] = useState<any>(null);
+  const [testRedirectResponse, setTestRedirectResponse] = useState<RedirectResponse | null>(null);
   const [testRedirectLoading, setTestRedirectLoading] = useState<boolean>(false);
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      try {
+        const data = await fetchMasterDetails();
+        setMasterData(data);
+      } catch (error) {
+        console.error("Error fetching master details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
   const testRedirectingUrl = async () => {
     if (!masterData?.access_token) {
       console.error("Fetch master API first");

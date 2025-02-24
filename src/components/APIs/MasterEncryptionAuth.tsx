@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const MasterEncryptionAuth: React.FC = () => {
@@ -10,16 +9,15 @@ const MasterEncryptionAuth: React.FC = () => {
   const description = "This API generates an encrypted token using the provided encrypted key.";
   const api = `${API_URL.BASE_URL}${API_URL.APP_ENCRYPT_TOKEN}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [encryptedKey, setEncryptedKey] = useState<string | null>(null);
-  const [encryptedData, setEncryptedData] = useState<any>(null);
+  const [encryptedData, setEncryptedData] = useState<unknown>(null);
   const [loading, setLoading] = useState<string | boolean | null>(null);
 
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -57,11 +55,16 @@ const MasterEncryptionAuth: React.FC = () => {
       } else {
         console.error("Unexpected Response Format:", response.data);
       }
-    } catch (error: any) {
-      console.error(
-        "Error fetching encrypted key:",
-        error.response?.data || error.message
-      );
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error("Error fetching encrypted key:", errorMessage);
     } finally {
       setLoading(null);
     }
@@ -77,7 +80,7 @@ const MasterEncryptionAuth: React.FC = () => {
     setLoading("Encrypting Data...");
     try {
       const response = await axios.post(
-       `${API_URL.BASE_URL}${API_URL.APP_ENCRYPT_TOKEN}`,
+        `${API_URL.BASE_URL}${API_URL.APP_ENCRYPT_TOKEN}`,
         new URLSearchParams({
           encrypted_key: encryptedKey,
         }),
@@ -89,11 +92,15 @@ const MasterEncryptionAuth: React.FC = () => {
         }
       );
       setEncryptedData(response.data);
-    } catch (error: any) {
-      console.error(
-        "Error fetching encrypted token:",
-        error.response?.data || error.message
-      );
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      console.error("Error fetching encrypted token:", errorMessage);
     } finally {
       setLoading(null);
     }

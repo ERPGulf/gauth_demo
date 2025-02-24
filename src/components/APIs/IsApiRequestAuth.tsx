@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axios,{AxiosError} from 'axios';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 import { useToast } from '../ui/use-toast';
 
@@ -16,24 +15,21 @@ const IsApiRequestAuth: React.FC = () => {
     user_id: '',
   });
 
-  const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [isApiRequestResponse, setIsApiRequestResponse] = useState<any>(null);
+const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);  const [loading, setLoading] = useState(false);
+  const [isApiRequestResponse, setIsApiRequestResponse] = useState<{ message: string } | null>(null);
   const [isApiRequestLoading, setIsApiRequestLoading] = useState<string | null>(null);
 
-  const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to fetch master data." });
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const handleFetchMasterDetails = async () => {
+     setLoading(true);
+     try {
+       const data = await fetchMasterDetails();
+       setMasterData(data);
+     } catch (error) {
+       console.error("Error fetching master details:", error);
+     } finally {
+       setLoading(false);
+     }
+   };
 
   const isApiRequest = async () => {
     if (!masterData?.access_token) {
@@ -48,10 +44,17 @@ const IsApiRequestAuth: React.FC = () => {
         validateStatus: (status) => status >= 200 && status < 400,
       });
       setIsApiRequestResponse(response.data);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || "Unknown API error.";
+    } catch (error: unknown) {
+      let errorMessage = "Unknown API error.";
+    
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data?.message || "An error occurred while processing the request.";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+    
       toast({ title: "API Error", description: errorMessage });
-      console.error('Error checking API request:', errorMessage);
+      console.error("Error checking API request:", errorMessage);
     } finally {
       setIsApiRequestLoading(null);
     }

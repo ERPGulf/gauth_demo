@@ -98,7 +98,7 @@ const ApiList: React.FC = () => {
         app_key: '',
       },
       method: 'DELETE',
-      targetPage: '/api/UserAuth',
+      targetPage: '/api/DeleteUserAuth',
     },
     enableuserApi: {
       title: 'enable user ',
@@ -120,7 +120,7 @@ const ApiList: React.FC = () => {
         app_key: '',
       },
       method: 'POST',
-      targetPage: '/api/UpdatePasswordUsingUserTokenAuth',
+      targetPage: '/api/UpdatePasswordUserTokenAuth',
     },
     generateresetpasswordkeyApi: {
       title: 'Generate reset password key',

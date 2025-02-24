@@ -44,7 +44,7 @@ const API_URL = {
     "gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password",
   UPDATE_PASSWORD_USING_USERTOKEN:
     "gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_usertoken",
-  UPLOAD_FILES: "gauth_erpgulf.gauth_erpgulf.backend_server.upload_file",
+  UPLOAD_FILES: "gauth_erpgulf.gauth_erpgulf.firebase_sms.upload_file",
   ACCOUNT_BALANCE:
     "gauth_erpgulf.gauth_erpgulf.firebase_sms.get_account_balance",
 };

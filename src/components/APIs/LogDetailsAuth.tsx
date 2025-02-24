@@ -4,8 +4,7 @@ import { useToast } from '../ui/use-toast';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // Add toast styles
 import { Button } from "@/components/ui/button";
-import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 import API_URL from "@/components/APIs/API-URL";
 
 const LogDetailsAuth: React.FC = () => {
@@ -18,18 +17,16 @@ const LogDetailsAuth: React.FC = () => {
         username: '',
         password: '',
     });
-    const [masterData, setMasterData] = useState<any>(null);
-    const [userData, setUserData] = useState<any>(null);
+    const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+    const [userData, setUserData] = useState<{ data: { token: { access_token: string } } } | null>(null);
     const [loading, setLoading] = useState<string | boolean | null>(null);
-    const [loginTimeData, setLoginTimeData] = useState<any>(null); // State for login time data
+    const [loginTimeData, setLoginTimeData] = useState<string | null>(null); // State for login time data
 
-    const appKey = import.meta.env.VITE_APP_APP_KEY; // Only used in API calls, not UI
-
+    const app_key = import.meta.env.VITE_APP_APP_KEY;
     const handleFetchMasterDetails = async () => {
         setLoading(true);
         try {
-            const payload = getMasterDataPayload();
-            const data = await fetchMasterDetails(payload);
+            const data = await fetchMasterDetails();
             setMasterData(data);
         } catch (error) {
             console.error("Error fetching master details:", error);
@@ -37,56 +34,49 @@ const LogDetailsAuth: React.FC = () => {
             setLoading(false);
         }
     };
-    const fetchUserDetails = async () => {
-        setLoading('Fetching User Details...');
+    const handleFetchUserDetails = async () => {
+        setLoading(true);
         try {
             if (!masterData?.access_token) {
-                throw new Error('Fetch master API first');
-            }
-            const accessToken = masterData.access_token;
-            const { username, password } = parameters;
-            if (!username || !password) {
-                throw new Error('Missing required parameters: username or password.');
-            }
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-            formData.append('app_key', appKey); // Use appKey securely here
-            formData.append('client_secret', import.meta.env.VITE_APP_CLIENT_SECRET);
-
-            const response = await axios.post(
-                `${API_URL.BASE_URL}${API_URL.USER_TOKEN}`,
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'multipart/form-data',
-                    },
-                }
-            );
-            console.log(response.data);
-            setUserData(response.data);
-        } catch (error: any) {
-            console.error('Error fetching user details:', {
-                message: error.message,
-                response: error.response?.data || null,
-            });
-            const errorMessage = error.response?.data?.message || 'An error occurred while fetching user details.';
-            toast({ title: 'Error', description: errorMessage });
-        } finally {
-            setLoading(null);
-        }
-    };
-
-    const fetchLoginTimeData = async () => {
-        setLoading('Fetching Login Time Data...');
-        try {
-            // Ensure userData is available
-            if (!userData || !userData.data || !userData.data.token || !userData.data.token.access_token) {
-                console.error('Error: User data or access token is missing.', userData);
-                toast({ title: 'Error', description: 'Fetch user details first' });
+                toast({ title: 'Error', description: 'Fetch master API first' });
                 return;
             }
+    
+            const { username, password } = parameters;
+            if (!username || !password) {
+                toast({ title: 'Error', description: 'Missing required parameters: username or password.' });
+                return;
+            }
+            const response = await fetchUserDetails(masterData, {
+                username,
+                password,
+                app_key: app_key,
+            });
+    
+            setUserData(response);
+            console.log('User Data:', response);
+            toast({ title: 'Success', description: 'User details fetched successfully!' });
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error('Error fetching user details:', error.message);
+                toast({ title: 'Error', description: error.message || 'Failed to fetch user details.' });
+            } else {
+                console.error('Unexpected error:', error);
+                toast({ title: 'Error', description: 'An unexpected error occurred.' });
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+
+    const fetchLoginTimeData = async () => {
+        if (!userData?.data?.token?.access_token) {
+            toast({ title: 'Error', description: 'Fetch user details first' });
+            return;
+        }
+        setLoading(true);
+        try {
             const userAccessToken = userData.data.token.access_token;
             console.log('Fetching login time data with user access token:', userAccessToken);
     
@@ -97,26 +87,34 @@ const LogDetailsAuth: React.FC = () => {
                     Accept: 'application/json',
                 },
             });
+    
             console.log('Login Time Data Response:', response.data);
             setLoginTimeData(response.data);
-        } catch (error: any) {
-            console.error('Error fetching login time data:', error);
-    
+            toast({ title: 'Success', description: 'Login time data fetched successfully!' });
+        } catch (error) {
             let errorMessage = 'An error occurred while fetching login time data.';
-            if (error.response) {
-                console.log('Full Response:', error.response.data);
     
-                if (error.response.status === 500) {
+
+            if (axios.isAxiosError(error)) {
+                console.error('Axios Error:', error.response?.data || error.message);
+                errorMessage = error.response?.data?.message || errorMessage;
+                if (error.response?.status === 500) {
                     errorMessage = 'Server error: Please check with the backend team.';
-                } else {
-                    errorMessage = error.response.data?.message || errorMessage;
                 }
-            } else if (error.message) {
+            } 
+            
+            else if (error instanceof Error) {
+                console.error('Unexpected Error:', error.message);
                 errorMessage = error.message;
+            } 
+            else {
+                console.error('Unknown Error:', error);
+                errorMessage = 'An unexpected error occurred.';
             }
+    
             toast({ title: 'Error', description: errorMessage });
         } finally {
-            setLoading(null);
+            setLoading(false);
         }
     };
     return (
@@ -200,7 +198,7 @@ const LogDetailsAuth: React.FC = () => {
 
                             {/* Fetch User Details Button */}
                             <Button
-                                onClick={fetchUserDetails}
+                                onClick={handleFetchUserDetails}
                                 className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
                                 disabled={!masterData || !!loading}
                             >

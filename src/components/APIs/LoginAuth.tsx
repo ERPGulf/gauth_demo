@@ -2,22 +2,15 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
-interface MasterData {
-    access_token: string;
-    expires_in: number;
-    token_type: string;
-    scope: string;
-    refresh_token: string;
-}
+
 
 const LoginAuth: React.FC = () => {
     const title = "Generate Encrypted 2FA Token for User";
     const description = "This API endpoint generates an encrypted token for a user to enable or validate two-factor authentication (2FA). It requires authentication through a Bearer token and session cookies, as well as an encrypted key that contains user-specific or session-specific information.";
     const api = `${API_URL.BASE_URL}${API_URL.GENERATE_2FA_TOKEN}`;
     const [parameters, setParameters] = useState({ email: "", password: "" });
-    const [masterData, setMasterData] = useState<MasterData | null>(null);
+    const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
     const [encryptedKey, setEncryptedKey] = useState("");
     const [loading, setLoading] = useState(false);
     const [loadingEncryptedKey, setLoadingEncryptedKey] = useState(false);
@@ -28,8 +21,7 @@ const LoginAuth: React.FC = () => {
     const handleFetchMasterDetails = async () => {
         setLoading(true);
         try {
-            const payload = getMasterDataPayload();
-            const data = await fetchMasterDetails(payload);
+            const data = await fetchMasterDetails();
             setMasterData(data);
         } catch (error) {
             console.error("Error fetching master details:", error);

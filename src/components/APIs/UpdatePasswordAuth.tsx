@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const UpdatePasswordAuth: React.FC = () => {
@@ -13,22 +12,21 @@ const UpdatePasswordAuth: React.FC = () => {
     username: "",
     password: "",
   });
-  const [masterData, setMasterData] = useState<any>(null);
-  const [updatePasswordData, setUpdatePasswordData] = useState<any>(null);
- const [loading, setLoading] = useState(false);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [updatePasswordData, setUpdatePasswordData] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [loadingUpdatePassword, setLoadingUpdatePassword] = useState<boolean>(false);
-   const handleFetchMasterDetails = async () => {
-          setLoading(true);
-          try {
-              const payload = getMasterDataPayload();
-              const data = await fetchMasterDetails(payload);
-              setMasterData(data);
-          } catch (error) {
-              console.error("Error fetching master details:", error);
-          } finally {
-              setLoading(false);
-          }
-      };
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchMasterDetails();
+      setMasterData(data);
+    } catch (error) {
+      console.error("Error fetching master details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const updateUserPassword = async () => {
     if (!masterData?.access_token) {
       alert("Please fetch the master data first.");
@@ -52,13 +50,23 @@ const UpdatePasswordAuth: React.FC = () => {
           Authorization: `Bearer ${masterData.access_token}`,
         },
       });
-      setUpdatePasswordData(response.data);
-    } catch (error: any) {
-      console.error(
-        "Error updating user password:",
-        error.response?.data || error.message
-      );
-      alert("Failed to update user password. Please try again.");
+      try {
+        setUpdatePasswordData(response.data);
+      } catch (error: unknown) {
+        let errorMessage = "An unknown error occurred.";
+        let responseData: unknown = "No response data";
+
+        if (error instanceof AxiosError) {
+          errorMessage = error.message;
+          responseData = error.response?.data || responseData;
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        console.error("Error updating user password:", responseData || errorMessage);
+        alert("Failed to update user password. Please try again.");
+      }
+
     } finally {
       setLoadingUpdatePassword(false);
     }
@@ -78,7 +86,7 @@ const UpdatePasswordAuth: React.FC = () => {
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
           <input
             type="text"
             value={description}
@@ -87,16 +95,16 @@ const UpdatePasswordAuth: React.FC = () => {
           />
         </div>
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
+          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
           <input
             type="text"
             value={api}
             readOnly
-           className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className=" mb-6 sm:mb-8">
-          <label htmlFor="Parameters"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Update Password Parameters</label>
+          <label htmlFor="Parameters" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Update Password Parameters</label>
           <h5 className="text-gray-500">(please enter valid user details)</h5>
           <div className=" grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {Object.entries(updatePasswordParams).map(([key, value]) => (

@@ -8,8 +8,10 @@ const MasterAuth: React.FC = () => {
   const description = "Fetches the master token";
   const api = `${API_URL.BASE_URL}${API_URL.APP_TOKEN}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
@@ -21,6 +23,7 @@ const MasterAuth: React.FC = () => {
       setLoading(false);
     }
   };
+
   
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">

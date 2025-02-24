@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios,{ AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import API_URL from "@/components/APIs/API-URL";
@@ -9,21 +9,21 @@ const DeleteUserComponent: React.FC = () => {
   const description = "Delete a user account by providing email and mobile number.";
   const api = `${API_URL.BASE_URL}${API_URL.DELETE_USER}`;
   const [parameters, setParameters] = useState({ email: "", mobile_no: "" });
-  const [masterData, setMasterData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [loading, setLoading] = useState(false);
-  const [deleteResponse, setDeleteResponse] = useState<any>(null);
+  const [deleteResponse, setDeleteResponse] = useState<{ message: string } | null>(null);
 
-   const handleFetchMasterDetails = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchMasterDetails(); 
-        setMasterData(data);
-      } catch (error) {
-        console.error("Error fetching master details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchMasterDetails();
+      setMasterData(data);
+    } catch (error) {
+      console.error("Error fetching master details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleDeleteUser = async () => {
     const { email, mobile_no } = parameters;
     if (!email || !mobile_no) {
@@ -47,8 +47,14 @@ const DeleteUserComponent: React.FC = () => {
 
       setDeleteResponse(response.data);
       alert("User deleted successfully.");
-    } catch (error: any) {
-      console.error("Error deleting user:", error.response?.data || error.message);
+    } catch (error: AxiosError | unknown) {
+      if (error instanceof AxiosError) {
+        console.error("Error deleting user:", error.response?.data || error.message);
+      } else if (error instanceof Error) {
+        console.error("Error deleting user:", error.message);
+      } else {
+        console.error("Unexpected error:", error);
+      }
       alert("Failed to delete user. Please try again.");
     } finally {
       setLoading(false);
@@ -79,7 +85,7 @@ const DeleteUserComponent: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {Object.entries(parameters).map(([key, value]) => (
               <div key={key} className="flex flex-col">
-                <label  htmlFor="Parameters" className="font-bold text-gray-700 mb-1">{key}:</label>
+                <label htmlFor="Parameters" className="font-bold text-gray-700 mb-1">{key}:</label>
                 <input
                   type="text"
                   value={value}

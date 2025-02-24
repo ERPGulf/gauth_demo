@@ -3,7 +3,6 @@ import { useToast } from "../ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const UserEncryptionAuth: React.FC = () => {
@@ -15,12 +14,12 @@ const UserEncryptionAuth: React.FC = () => {
     username: "",
     password: "",
   });
-  const [masterData, setMasterData] = useState<{ access_token?: string } | null>(null);
-  const [userData, setUserData] = useState<Record<string, any> | null>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
   const [encryptedKey, setEncryptedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState<string | null>(null);
-  const [encryptedTokenData, setEncryptedTokenData] = useState<any>(null);
+  const [encryptedTokenData, setEncryptedTokenData] = useState<unknown>(null);
   const handleMouseEnter = () => {
     if (!masterData?.access_token) {
       toast({ title: "Warning", description: "Please fetch master data first" });
@@ -29,8 +28,7 @@ const UserEncryptionAuth: React.FC = () => {
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -41,23 +39,22 @@ const UserEncryptionAuth: React.FC = () => {
 
   const handleFetchUserDetails = async () => {
     setLoading(true);
-    setLoadingText("Fetching User Data...");
     try {
       if (!masterData?.access_token) throw new Error("Fetch master API first.");
       const { username, password } = parameters;
-      const app_key = import.meta.env.VITE_APP_APP_KEY;
+      const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
       if (!username || !password) throw new Error("Missing username or password.");
       const data = await fetchUserDetails(masterData, { username, password, app_key });
       setUserData(data);
       toast({ title: "Success", description: "User details fetched successfully!" });
     } catch (error) {
-      toast({ title: "Error", description: "An error occurred while fetching user data." });
+      toast({ title: "Error", description: "An error occurred." });
       console.error("Error fetching user details:", error);
     } finally {
       setLoading(false);
-      setLoadingText(null);
     }
   };
+
   const handleFetchEncryptedKey = async () => {
     setLoading(true);
     setLoadingText("Fetching Encrypted Key...");
@@ -134,7 +131,7 @@ const UserEncryptionAuth: React.FC = () => {
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="Title"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
+          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
           <input
             type="text"
             value={title}
@@ -144,7 +141,7 @@ const UserEncryptionAuth: React.FC = () => {
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
           <input
             type="text"
             value={description}

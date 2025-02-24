@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const IsUserAvailableAuth: React.FC = () => {
-  const title ="Check if User is Available";
+  const title = "Check if User is Available";
   const description = "Checks if a user is available based on mobile phone and email.";
   const api = `${API_URL.BASE_URL}${API_URL.IS_USER_AVAILABLE}`;
   // Parameters for checking user availability (entered by user)
@@ -15,24 +14,23 @@ const IsUserAvailableAuth: React.FC = () => {
     user_email: "",
   });
 
-  const [masterData, setMasterData] = useState<any>(null);
-  const [userAvailabilityData, setUserAvailabilityData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [userAvailabilityData, setUserAvailabilityData] = useState<unknown>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingUserAvailability, setLoadingUserAvailability] = useState<boolean>(false);
 
   // Fetch master details
-   const handleFetchMasterDetails = async () => {
-      setLoading(true);
-      try {
-        const payload = getMasterDataPayload();
-        const data = await fetchMasterDetails(payload);
-        setMasterData(data);
-      } catch (error) {
-        console.error("Error fetching master details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchMasterDetails();
+      setMasterData(data);
+    } catch (error) {
+      console.error("Error fetching master details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Check if user is available
   const checkUserAvailability = async () => {
@@ -62,16 +60,20 @@ const IsUserAvailableAuth: React.FC = () => {
         },
       });
       setUserAvailabilityData(response);
-    } catch (error: any) {
-      console.error(
-        "Error checking user availability:",
-        error.response?.data || error.message
-      );
-      alert("Failed to check user availability. Please try again.");
-    } finally {
-      setLoadingUserAvailability(false);
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error("Error checking user availability:", errorMessage);
     }
-  };
+    setLoadingUserAvailability(false);
+  }
+
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
@@ -81,7 +83,7 @@ const IsUserAvailableAuth: React.FC = () => {
           <input
             type="text"
             value={title}
-           readOnly
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -90,7 +92,7 @@ const IsUserAvailableAuth: React.FC = () => {
           <input
             type="text"
             value={description}
-           readOnly
+            readOnly
             className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

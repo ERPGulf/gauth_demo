@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const UploadFilesAuth: React.FC = () => {
-
   const title = 'Upload File';
   const description = 'Uploads a file to the server';
   const api = `${API_URL.BASE_URL}${API_URL.UPLOAD_FILES}`;
@@ -17,17 +15,16 @@ const UploadFilesAuth: React.FC = () => {
     is_private: '1',
   });
 
-  const [masterData, setMasterData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [loading, setLoading] = useState<string | boolean | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState<string | null>(null);
-  const [uploadResponse, setUploadResponse] = useState<any>(null);
+  const [uploadResponse, setUploadResponse] = useState<string | null>(null);
 
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -37,14 +34,14 @@ const UploadFilesAuth: React.FC = () => {
   };
 
   const uploadFile = async () => {
-    if (!masterData?.access_token)  {
+    if (!masterData?.access_token) {
       throw new Error('Fetch master API first');
     }
     if (!file) {
       alert('Please select a file to upload');
       return;
     }
-    const accessToken = masterData.data.access_token;
+    const accessToken = masterData.access_token;
     setUploadLoading('Uploading file...');
     try {
       const formData = new FormData();
@@ -58,8 +55,17 @@ const UploadFilesAuth: React.FC = () => {
         },
       });
       setUploadResponse(response.data);
-    } catch (error: any) {
-      console.error('Error uploading file:', error.response?.data || error.message);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          'Error uploading file:',
+          error.response?.data || error.message
+        );
+      } else if (error instanceof Error) {
+        console.error('Error uploading file:', error.message);
+      } else {
+        console.error('Error uploading file: Unknown error');
+      }
     } finally {
       setUploadLoading(null);
     }

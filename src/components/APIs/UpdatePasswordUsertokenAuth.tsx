@@ -3,8 +3,15 @@ import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
 import { useToast } from '../ui/use-toast';
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
+interface UserData {
+    data: {
+        token: {
+            access_token: string;
+        };
+    };
+}
+
 
 const UpdatePasswordUserTokenAuth: React.FC = () => {
     const { toast } = useToast();
@@ -15,22 +22,21 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
         username: '',
         password: '',
     });
-    const [masterData, setMasterData] = useState<any>(null);
+    const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
     const [loading, setLoading] = useState<string | boolean | null>(null);
-    const [userData, setUserData] = useState<any>(null);
+    const [userData, setUserData] = useState<UserData | null>(null);
     const [newPassword, setNewPassword] = useState<string>("");
     const handleFetchMasterDetails = async () => {
-              setLoading(true);
-              try {
-                  const payload = getMasterDataPayload();
-                  const data = await fetchMasterDetails(payload);
-                  setMasterData(data);
-              } catch (error) {
-                  console.error("Error fetching master details:", error);
-              } finally {
-                  setLoading(false);
-              }
-          };
+        setLoading(true);
+        try {
+            const data = await fetchMasterDetails();
+            setMasterData(data);
+        } catch (error) {
+            console.error("Error fetching master details:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleFetchUserDetails = async () => {
         setLoading(true);
@@ -78,12 +84,23 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                 title: "Success",
                 description: "Password updated successfully!",
             });
-        } catch (error: any) {
-            console.error("Error updating password:", error);
-            toast({
-                title: "Update Failed",
-                description: error.response?.data?.message || "An error occurred while updating the password.",
-            });
+        } catch (error: unknown) {
+            // Check if error is an AxiosError
+            if (axios.isAxiosError(error)) {
+                console.error("Error updating password:", error);
+                toast({
+                    title: "Update Failed",
+                    description:
+                        error.response?.data?.message ||
+                        "An error occurred while updating the password.",
+                });
+            } else {
+                console.error("Unexpected error:", error);
+                toast({
+                    title: "Update Failed",
+                    description: "An unexpected error occurred.",
+                });
+            }
         } finally {
             setLoading(null);
         }
@@ -114,7 +131,7 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                     <input
                         type="text"
                         value={api}
-                       readOnly
+                        readOnly
                         className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>

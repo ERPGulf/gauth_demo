@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useToast } from '../ui/use-toast';
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 const UserAuth: React.FC = () => {
 
@@ -15,8 +14,8 @@ const UserAuth: React.FC = () => {
         username: '',
         password: '',
     });
-    const [masterData, setMasterData] = useState<{ access_token?: string } | null>(null);
-    const [userData, setUserData] = useState<Record<string, any> | null>(null);
+    const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+    const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
     const [loading, setLoading] = useState(false);
 
 
@@ -25,19 +24,17 @@ const UserAuth: React.FC = () => {
             toast({ title: 'Warning', description: 'Please fetch master data first' });
         }
     };
-    const handleFetchMasterDetails = async () => {
-        setLoading(true);
-        try {
-            const payload = getMasterDataPayload();
-            const data = await fetchMasterDetails(payload);
-            setMasterData(data);
-        } catch (error) {
-            toast({ title: "Error", description: "Failed to fetch master data." });
-            console.error("Error fetching master details:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+   const handleFetchMasterDetails = async () => {
+       setLoading(true);
+       try {
+         const data = await fetchMasterDetails();
+         setMasterData(data);
+       } catch (error) {
+         console.error("Error fetching master details:", error);
+       } finally {
+         setLoading(false);
+       }
+     };
     const handleFetchUserDetails = async () => {
         setLoading(true);
         try {

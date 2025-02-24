@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
 
 const RandomPasswordAuth: React.FC = () => {
@@ -10,16 +9,15 @@ const RandomPasswordAuth: React.FC = () => {
   const description = "Generates a secure random password";
   const api = `${API_URL.BASE_URL}${API_URL.RANDOM_PASSWORD}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
-  const [randomPasswordData, setRandomPasswordData] = useState<any>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [randomPasswordData, setRandomPasswordData] = useState<unknown>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingPassword, setLoadingPassword] = useState<boolean>(false);
   // Fetch master details
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data = await fetchMasterDetails();
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -41,12 +39,16 @@ const RandomPasswordAuth: React.FC = () => {
         },
       });
       setRandomPasswordData(response.data);
-    } catch (error: any) {
-      console.error(
-        "Error generating random password:",
-        error.response?.data || error.message
-      );
-      alert("Failed to generate random password. Please try again.");
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred.";
+
+      if (error instanceof AxiosError) {
+        errorMessage = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error("Error generating random password:", errorMessage);
     } finally {
       setLoadingPassword(false);
     }
@@ -90,7 +92,7 @@ const RandomPasswordAuth: React.FC = () => {
             Parameters
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {parameters.map((param) => (
+            {parameters.map((param) => (
               <div key={param}>
                 <input
                   type="text"

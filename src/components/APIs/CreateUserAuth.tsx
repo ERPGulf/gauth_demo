@@ -15,33 +15,33 @@ const CreateUserAuth: React.FC = () => {
     password: "",
   });
 
-  const [masterData, setMasterData] = useState<any>(null);
-  const [createUserData, setCreateUserData] = useState<any>(null);
+   const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [createUserData, setCreateUserData] = useState(null);
   const [loading, setLoading] = useState<string | boolean | null>(null);
   const [resetKey, setResetKey] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [username, setUsername] = useState<string>("");
-  const [passwordUpdateResponse, setPasswordUpdateResponse] = useState<any>(null);
+  const [passwordUpdateResponse, setPasswordUpdateResponse] = useState(null);
   const [loadingPasswordUpdate, setLoadingPasswordUpdate] = useState<boolean>(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
-  const [resendOtpResponse, setResendOtpResponse] = useState<any>(null);
+  const [resendOtpResponse, setResendOtpResponse] = useState(null);
   const [otpSent, setOtpSent] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
 
   // Fetch Master Token
- const handleFetchMasterDetails = async () => {
-       setLoading(true);
-       try {
-         const data = await fetchMasterDetails(); 
-         setMasterData(data);
-       } catch (error) {
-         console.error("Error fetching master details:", error);
-       } finally {
-         setLoading(false);
-       }
-     };
+  const handleFetchMasterDetails = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchMasterDetails();
+      setMasterData(data);
+    } catch (error) {
+      console.error("Error fetching master details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Create User
   const createUser = async () => {
@@ -79,13 +79,24 @@ const CreateUserAuth: React.FC = () => {
       setCreateUserData(response.data);
       console.log("User created successfully:", response.data);
       setOtpSent(true);
-    } catch (error: any) {
-      console.error("Error creating user:", error.response?.data || error.message);
-      alert(error.response?.data?.message || error.message || "Failed to create user.");
+    }catch (error: unknown) {
+      let errorMessage = "Failed to create user.";
+    
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+    
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message || errorMessage;
+      }
+    
+      console.error("Error creating user:", error);
+      alert(errorMessage);
     } finally {
       setLoading(null);
     }
-  };
+  }    
 
   // Update Password using Reset Key
   const updatePasswordWithResetKey = async () => {
@@ -116,13 +127,24 @@ const CreateUserAuth: React.FC = () => {
       setPasswordUpdateResponse(response.data);
       console.log("Password updated successfully:", response.data);
       alert("Password updated successfully!");
-    } catch (error: any) {
-      console.error("Error updating password:", error.response?.data || error.message);
-      alert(error.response?.data?.message || error.message || "Failed to update password.");
+    } catch (error: unknown) {
+      let errorMessage = "Failed to create user.";
+    
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+    
+      if (typeof error === "object" && error !== null && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message || errorMessage;
+      }
+    
+      console.error("Error creating user:", error);
+      alert(errorMessage);
     } finally {
-      setLoadingPasswordUpdate(false);
+      setLoading(null);
     }
-  };
+  }    
 
   const handleResendOTP = async () => {
     setError(null);

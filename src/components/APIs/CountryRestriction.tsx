@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios, { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import { getMasterDataPayload } from "@/components/APIs/utils/payload";
 import API_URL from "@/components/APIs/API-URL";
-import { AxiosError } from "axios";
 
 const CountryRestriction: React.FC = () => {
-  const title='Check Country Restriction';
-  const description ='This API checks country restrictions.';
-  const api =`${API_URL.BASE_URL}${API_URL.COUNTRY_RESTRICTION}`;
+  // ✅ Define the correct type for masterData
+  interface MasterData {
+    access_token: string;
+    expires_in: number;
+    token_type: string;
+    scope: string;
+    refresh_token: string;
+    // Add other properties if needed
+  }
+
+  const title = "Check Country Restriction";
+  const description = "This API checks country restrictions.";
+  const api = `${API_URL.BASE_URL}${API_URL.COUNTRY_RESTRICTION}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
-  const [masterData, setMasterData] = useState<any>(null);
-  const [loading, setLoading] = useState<string | boolean | null>(null);
-  const [countryRestrictionData, setCountryRestrictionData] = useState<any>(null);
-  const [countryRestrictionLoading, setCountryRestrictionLoading] = useState<string | boolean | null>(null);
+  const [masterData, setMasterData] = useState<MasterData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [countryRestrictionData, setCountryRestrictionData] = useState<string|null>(null);
+  const [countryRestrictionLoading, setCountryRestrictionLoading] = useState<boolean>(false);
+
   const handleFetchMasterDetails = async () => {
     setLoading(true);
     try {
-      const payload = getMasterDataPayload();
-      const data = await fetchMasterDetails(payload);
+      const data: MasterData = await fetchMasterDetails(); 
       setMasterData(data);
     } catch (error) {
       console.error("Error fetching master details:", error);
@@ -29,12 +37,14 @@ const CountryRestriction: React.FC = () => {
   };
 
   const checkCountryRestriction = async () => {
-    if (!masterData?.access_token) {
+    if (!masterData || !masterData.access_token) {
       console.error("Fetch master API first");
       return;
     }
+
     const accessToken = masterData.access_token;
     setCountryRestrictionLoading(true);
+
     try {
       const response = await axios.post(api, null, {
         headers: { Authorization: `Bearer ${accessToken}` },
