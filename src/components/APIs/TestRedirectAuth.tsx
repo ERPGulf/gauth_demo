@@ -4,30 +4,33 @@ import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import API_URL from "@/components/APIs/API-URL";
 interface RedirectResponse {
-  status: string;
+  status: string | number;
   url?: string;
   redirect_url?: string;
+  message: string;
+  response?: string;
+
 }
 const TestRedirectAuth: React.FC = () => {
   const title = 'Test Redirect URL';
   const description = 'Tests the redirection functionality of a URL';
   const api = `${API_URL.BASE_URL}${API_URL.TEST_REDIRECT}`;
   const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
- const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [testRedirectResponse, setTestRedirectResponse] = useState<RedirectResponse | null>(null);
   const [testRedirectLoading, setTestRedirectLoading] = useState<boolean>(false);
   const handleFetchMasterDetails = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchMasterDetails();
-        setMasterData(data);
-      } catch (error) {
-        console.error("Error fetching master details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      const data = await fetchMasterDetails();
+      setMasterData(data);
+    } catch (error) {
+      console.error("Error fetching master details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const testRedirectingUrl = async () => {
     if (!masterData?.access_token) {
       console.error("Fetch master API first");
@@ -54,17 +57,36 @@ const TestRedirectAuth: React.FC = () => {
       } else {
         setTestRedirectResponse(response.data);
       }
-    } catch (error: any) {
+    }
+    catch (error: unknown) {
+      let errorMessage = "An unknown error occurred";
+      let errorResponse = "No response data";
+      let errorStatus = "Unknown";
+
+      // Check if error is an instance of Error (general JavaScript errors)
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      // Check if error is an AxiosError
+      if (axios.isAxiosError(error)) {
+        errorResponse = error.response?.data ?? "No response data";
+        errorStatus = error.response?.status?.toString() ?? "Unknown";
+      }
+
       setTestRedirectResponse({
-        message: error.message,
-        response: error.response?.data || "No response data",
-        status: error.response?.status || "Unknown",
+        message: errorMessage,
+        response: errorResponse,
+        status: errorStatus,
       });
+
       console.error("Error testing redirecting URL:", error);
-    } finally {
+    }
+    finally {
       setTestRedirectLoading(false);
     }
-  };
+
+  }
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
@@ -80,7 +102,7 @@ const TestRedirectAuth: React.FC = () => {
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="description"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
+          <label htmlFor="description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
           <input
             type="text"
             value={description}
@@ -99,7 +121,7 @@ const TestRedirectAuth: React.FC = () => {
           />
         </div>
         <div className="mb-6 sm:mb-8">
-          <label htmlFor="Parametrs"  className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
+          <label htmlFor="Parametrs" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
             Parameters
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
