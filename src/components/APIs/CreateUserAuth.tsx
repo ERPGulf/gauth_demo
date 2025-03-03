@@ -45,16 +45,23 @@ const CreateUserAuth: React.FC = () => {
   };
   // Create User
   const createUser = async () => {
+    if (!masterData) {
+      setError("Master data is required to create a user.");
+      return;
+    }
+
     const response = await handleApiCall(
-      () => createUserAPI(masterData!, parameters),
+      () => createUserAPI(masterData, parameters),
       setLoading,
       "User created successfully!"
     );
+
     if (response) {
       setCreateUserData(response);
       setOtpSent(true);
     }
   };
+
 
   // Update Password using Reset Key
   const updatePasswordWithResetKey = async () => {
