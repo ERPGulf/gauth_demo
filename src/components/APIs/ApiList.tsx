@@ -131,7 +131,7 @@ const ApiList: React.FC = () => {
         app_key: '',
       },
       method: 'POST',
-      targetPage: '/api/ ResetPasswordKeyAuth',
+      targetPage: '/api/ResetPasswordKeyAuth',
     },
 
     updatepasswordusingresetkeyApi: {

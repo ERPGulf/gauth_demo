@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import axios,{AxiosError} from 'axios';
-import { Button } from "@/components/ui/button";
+import axios from 'axios';
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import API_URL from "@/components/APIs/utils/API-URL";
 import { useToast } from '../ui/use-toast';
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
 
 const IsApiRequestAuth: React.FC = () => {
   const { toast } = useToast();
@@ -14,85 +16,48 @@ const IsApiRequestAuth: React.FC = () => {
     full_name: '',
     user_id: '',
   });
-
-const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);  const [loading, setLoading] = useState(false);
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null); const [loading, setLoading] = useState(false);
   const [isApiRequestResponse, setIsApiRequestResponse] = useState<{ message: string } | null>(null);
   const [isApiRequestLoading, setIsApiRequestLoading] = useState<string | null>(null);
-
- const handleFetchMasterDetails = async () => {
-     setLoading(true);
-     try {
-       const data = await fetchMasterDetails();
-       setMasterData(data);
-     } catch (error) {
-       console.error("Error fetching master details:", error);
-     } finally {
-       setLoading(false);
-     }
-   };
-
+  // Fetch Master Token
+  const handleFetchMasterDetails = async () => {
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
+  };
+  // Check API Request
   const isApiRequest = async () => {
     if (!masterData?.access_token) {
       toast({ title: "Error", description: "Fetch master API first." });
       return;
     }
-    setIsApiRequestLoading('Checking API Request...');
+    setIsApiRequestLoading("Checking API Request...");
+
     try {
-      const response = await axios.get(api, {
-        headers: { Authorization: `Bearer ${masterData.access_token}` },
-        maxRedirects: 0,
-        validateStatus: (status) => status >= 200 && status < 400,
-      });
-      setIsApiRequestResponse(response.data);
-    } catch (error: unknown) {
-      let errorMessage = "Unknown API error.";
-    
-      if (error instanceof AxiosError) {
-        errorMessage = error.response?.data?.message || "An error occurred while processing the request.";
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
+      // Define API function
+      const apiFunction = async () => {
+        return await axios.get(api, {
+          headers: { Authorization: `Bearer ${masterData.access_token}` },
+          maxRedirects: 0,
+          validateStatus: (status) => status >= 200 && status < 400,
+        });
+      };
+      const response = await handleApiCall(apiFunction, setIsApiRequestLoading);
+
+      if (response?.data) {
+        setIsApiRequestResponse(response.data);
       }
-    
-      toast({ title: "API Error", description: errorMessage });
-      console.error("Error checking API request:", errorMessage);
-    } finally {
-      setIsApiRequestLoading(null);
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast({ title: "API Error", description: "An unexpected error occurred." });
     }
   };
-
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input
-            type="text"
-            value={title}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input
-            type="text"
-            value={description}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input
-            type="text"
-            value={api}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
 
         <div className="mb-6 sm:mb-8">
           <label htmlFor="Parameters" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
@@ -116,13 +81,7 @@ const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMast
           </div>
         </div>
 
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
-        >
-          {loading ? 'Fetching...' : 'Proceed'}
-        </Button>
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
 
         {masterData && (
           <>
@@ -133,13 +92,7 @@ const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMast
               </pre>
             </div>
 
-            <Button
-              onClick={isApiRequest}
-              className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!isApiRequestLoading}
-            >
-              {isApiRequestLoading ? 'Checking...' : 'Is API Request'}
-            </Button>
+            <FetchButton onClick={isApiRequest} label="is Api Request" loading={isApiRequestLoading} />
 
             {isApiRequestResponse && (
               <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">

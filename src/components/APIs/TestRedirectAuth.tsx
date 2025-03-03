@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import ParameterList from "./utils/ParameterList";
+import FetchButton from './utils/FetchButton';
+
 interface RedirectResponse {
   status: string | number;
   url?: string;
@@ -20,130 +24,43 @@ const TestRedirectAuth: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [testRedirectResponse, setTestRedirectResponse] = useState<RedirectResponse | null>(null);
   const [testRedirectLoading, setTestRedirectLoading] = useState<boolean>(false);
+  // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMasterDetails();
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
   };
+  //test redirecting URL
   const testRedirectingUrl = async () => {
     if (!masterData?.access_token) {
       console.error("Fetch master API first");
       return;
     }
-
     const accessToken = masterData.access_token;
-    setTestRedirectLoading(true);
-
-    try {
+    const apiFunction = async () => {
       const response = await axios.get(api, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        validateStatus: (status) => status < 400, // Prevents throwing an error for 303
+        headers: { Authorization: `Bearer ${accessToken}` },
+        validateStatus: (status) => status < 400,
       });
-
-      if (response.status === 303 && response.data?.redirect_url) {
-        setTestRedirectResponse({
-          message: "Redirect detected",
-          redirect_url: response.data.redirect_url, // Save the redirect URL to UI
-          status: 303,
-        });
-      } else {
-        setTestRedirectResponse(response.data);
-      }
+      return response.status === 303 && response.data?.redirect_url
+        ? { message: "Redirect detected", redirect_url: response.data.redirect_url, status: 303 }
+        : response.data;
+    };
+    const data = await handleApiCall(apiFunction, setTestRedirectLoading);
+    if (data) {
+      setTestRedirectResponse(data);
     }
-    catch (error: unknown) {
-      let errorMessage = "An unknown error occurred";
-      let errorResponse = "No response data";
-      let errorStatus = "Unknown";
+  };
 
-      // Check if error is an instance of Error (general JavaScript errors)
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      // Check if error is an AxiosError
-      if (axios.isAxiosError(error)) {
-        errorResponse = error.response?.data ?? "No response data";
-        errorStatus = error.response?.status?.toString() ?? "Unknown";
-      }
-
-      setTestRedirectResponse({
-        message: errorMessage,
-        response: errorResponse,
-        status: errorStatus,
-      });
-
-      console.error("Error testing redirecting URL:", error);
-    }
-    finally {
-      setTestRedirectLoading(false);
-    }
-
-  }
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input
-            type="text"
-            value={title}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
+        <ParameterList parameters={parameters} />
 
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input
-            type="text"
-            value={description}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input
-            type="text"
-            value={api}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Parametrs" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
-            Parameters
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {parameters.map((param) => (
-              <div key={param}>
-                <input
-                  type="text"
-                  value={param}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-100 focus:outline-none"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
-        >
-          {loading ? 'Fetching...' : 'Proceed'}
-        </Button>
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
         {masterData && (
           <>
             <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto ">
@@ -152,13 +69,7 @@ const TestRedirectAuth: React.FC = () => {
                 {JSON.stringify(masterData, null, 2)}
               </pre>
             </div>
-            <Button
-              onClick={testRedirectingUrl}
-              className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!testRedirectLoading}
-            >
-              {testRedirectLoading ? 'Testing...' : 'Test Redirecting URL'}
-            </Button>
+            <FetchButton onClick={testRedirectingUrl} label="fetch redirecting URL" loading={testRedirectLoading} />
             {testRedirectResponse && (
               <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
                 <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">

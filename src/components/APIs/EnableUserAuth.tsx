@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
+
 interface EnableUserParams {
   username: string;
   email: string;
@@ -30,99 +33,48 @@ const EnableUserAuth: React.FC = () => {
   };
   // Fetch master details
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMasterDetails();
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
   };
 
   // Enable user account
   const enableUserAccount = async () => {
-    if (!masterData?.access_token)
-      return alert("Please fetch the master data first.");
-
+    if (!masterData?.access_token) {
+      alert("Please fetch the master data first.");
+      return;
+    }
     const { username, email, mobile_no } = enableUserParams;
-    if (!username || !email || !mobile_no)
-      return alert("Please fill out all required fields.");
+    if (!username || !email || !mobile_no) {
+      alert("Please fill out all required fields.");
+      return;
+    }
+    const apiFunction = async () => {
+      const formData = new FormData();
+      formData.append("username", username);
+      formData.append("email", email);
+      formData.append("mobile_no", mobile_no);
 
-    setLoadingEnableUser(true);
-
-    const formData = new FormData();
-    formData.append("username", username);
-    formData.append("email", email);
-    formData.append("mobile_no", mobile_no);
-
-    try {
-      const response = await axios.post(api, formData, {
+      return await axios.post(api, formData, {
         headers: {
           Authorization: `Bearer ${masterData.access_token}`,
           "Content-Type": "multipart/form-data",
         },
       });
+    };
 
-      const data = response.data;
-      if (typeof data !== "object" || data === null) {
-        return alert("Unexpected response format. Response is not an object.");
-      }
+    const response = await handleApiCall(apiFunction, setLoadingEnableUser, "User account enabled successfully!");
 
-      const { message, user_count } = data as { message?: string; user_count?: number };
-      if (!message || typeof user_count !== "number") {
-        return alert("Unexpected response format. Please check the API response structure.");
-      }
-
-      setEnableUserData(data);
-      alert(message);
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message ?? error.message;
-        alert(`Failed to enable user account: ${errorMessage}`);
-      } else if (error instanceof Error) {
-        alert(`Failed to enable user account: ${error.message}`);
-      } else {
-        alert("Failed to enable user account. Please try again.");
-      }
-    } finally {
-      setLoadingEnableUser(false);
+    if (response) {
+      setEnableUserData(response.data);
     }
   };
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input
-            type="text"
-            value={title}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input
-            type="text"
-            value={description}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input
-            type="text"
-            value={api}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
 
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
@@ -145,13 +97,8 @@ const EnableUserAuth: React.FC = () => {
             ))}
           </div>
         </div>
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={loading}
-        >
-          {loading ? "Fetching Master Data..." : "proceed"}
-        </Button>
+
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
         {masterData && (
           <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
             <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">
@@ -164,15 +111,7 @@ const EnableUserAuth: React.FC = () => {
         )}
         {masterData?.access_token && (
           <>
-            <Button
-              onClick={enableUserAccount}
-              className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={loadingEnableUser}
-            >
-              {loadingEnableUser
-                ? "Enabling User Account..."
-                : "Enable User Account"}
-            </Button>
+            <FetchButton onClick={enableUserAccount} label="Enable User" loading={loadingEnableUser} />
             {enableUserData && (
               <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
                 <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">

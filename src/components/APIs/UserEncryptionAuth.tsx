@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useToast } from "../ui/use-toast";
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
-import API_URL from "@/components/APIs/API-URL";
-
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
 const UserEncryptionAuth: React.FC = () => {
   const { toast } = useToast();
   const title = "Generate User Token API";
@@ -20,51 +21,41 @@ const UserEncryptionAuth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState<string | null>(null);
   const [encryptedTokenData, setEncryptedTokenData] = useState<unknown>(null);
-  const handleMouseEnter = () => {
-    if (!masterData?.access_token) {
-      toast({ title: "Warning", description: "Please fetch master data first" });
-    }
-  };
+
+  // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMasterDetails();
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
   };
 
+  // Fetch User Token
   const handleFetchUserDetails = async () => {
-    setLoading(true);
-    try {
-      if (!masterData?.access_token) throw new Error("Fetch master API first.");
-      const { username, password } = parameters;
-      const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
-      if (!username || !password) throw new Error("Missing username or password.");
-      const data = await fetchUserDetails(masterData, { username, password, app_key });
-      setUserData(data);
-      toast({ title: "Success", description: "User details fetched successfully!" });
-    } catch (error) {
-      toast({ title: "Error", description: "An error occurred." });
-      console.error("Error fetching user details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (!masterData?.access_token) return;
 
-  const handleFetchEncryptedKey = async () => {
-    setLoading(true);
-    setLoadingText("Fetching Encrypted Key...");
+    const { username, password } = parameters;
+    const app_key = import.meta.env.VITE_APP_APP_KEY;
 
-    if (!masterData?.access_token) {
-      toast({ title: "Error", description: "Fetch master API first." });
-      setLoading(false);
+    if (!username || !password) {
+      toast({ title: "Error", description: "Missing username or password." });
       return;
     }
-    try {
+
+    const data = await handleApiCall(
+      () => fetchUserDetails(masterData, { username, password, app_key }),
+      setLoading,
+      "User details fetched successfully!"
+    );
+
+    if (data) setUserData(data);
+  };
+  // Fetch Encrypted Key
+  const handleFetchEncryptedKey = async () => {
+    if (!masterData?.access_token) {
+      toast({ title: "Error", description: "Fetch master API first." });
+      return;
+    }
+
+    const fetchEncryptionKey = async () => {
       const response = await axios.post(
         `${API_URL.BASE_URL}${API_URL.USER_ENCRYPT_KEY}`,
         new URLSearchParams({
@@ -77,32 +68,26 @@ const UserEncryptionAuth: React.FC = () => {
           },
         }
       );
-      const encryptedKey = response.data?.data || "No encrypted key returned";
-      setEncryptedKey(encryptedKey);
-      toast({ title: "Success", description: "Encrypted key fetched successfully!" });
-    } catch (error) {
-      console.error("Error fetching encrypted key:", error);
-      toast({ title: "Error", description: "Failed to fetch encrypted key." });
-    } finally {
-      setLoading(false);
-      setLoadingText(null);
-    }
+      return response.data?.data || "No encrypted key returned";
+    };
+
+    const encryptedKey = await handleApiCall(fetchEncryptionKey, setLoading, "Encrypted key fetched successfully!");
+    if (encryptedKey) setEncryptedKey(encryptedKey);
   };
 
+  // Fetch Encrypted Token
+
   const handleFetchEncryptedToken = async () => {
-    setLoading(true);
-    setLoadingText("Fetching Encrypted Token...");
     if (!masterData?.access_token) {
       toast({ title: "Error", description: "Fetch master API first." });
-      setLoading(false);
       return;
     }
     if (!encryptedKey) {
       toast({ title: "Error", description: "Fetch encrypted key first." });
-      setLoading(false);
       return;
     }
-    try {
+
+    const fetchEncryptedToken = async () => {
       const response = await axios.post(
         `${API_URL.BASE_URL}${API_URL.USER_ENCRYPT_TOKEN}`,
         new URLSearchParams({ encrypted_key: encryptedKey }),
@@ -114,51 +99,19 @@ const UserEncryptionAuth: React.FC = () => {
           responseType: "json",
         }
       );
-      const token = response.data?.data?.token?.access_token || "No access token returned";
-      setEncryptedTokenData(token);
-      toast({ title: "Success", description: "Encrypted token fetched successfully!" });
-
-    } catch (error) {
-      console.error("Error fetching encrypted token:", error);
-      toast({ title: "Error", description: "Failed to fetch encrypted token." });
-    } finally {
-      setLoading(false);
-      setLoadingText(null);
-    }
+      return response.data?.data?.token?.access_token || "No access token returned";
+    };
+    const token = await handleApiCall(fetchEncryptedToken, setLoadingText, "Encrypted token fetched successfully!");
+    if (token) setEncryptedTokenData(token);
   };
+
 
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input
-            type="text"
-            value={title}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input
-            type="text"
-            value={description}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input
-            type="text"
-            value={api}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
 
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
@@ -182,13 +135,7 @@ const UserEncryptionAuth: React.FC = () => {
           </div>
         </div>
 
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
-        >
-          proceed
-        </Button>
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
 
         {masterData && (
           <>
@@ -199,14 +146,7 @@ const UserEncryptionAuth: React.FC = () => {
               </pre>
             </div>
 
-            <Button
-              onClick={handleFetchUserDetails}
-              onMouseEnter={handleMouseEnter}
-              className=" mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!loading}
-            >
-              Fetch User Data
-            </Button>
+            <FetchButton onClick={handleFetchUserDetails} label="Fetch User Data" loading={loading} />
 
             {userData && (
               <>
@@ -217,14 +157,7 @@ const UserEncryptionAuth: React.FC = () => {
                   </pre>
                 </div>
 
-                <Button
-                  onClick={handleFetchEncryptedKey}
-                  onMouseEnter={handleMouseEnter}
-                  className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                  disabled={!!loading}
-                >
-                  Fetch Encrypted Key
-                </Button>
+                <FetchButton onClick={handleFetchEncryptedKey} label="Fetch Encrypted Key" loading={loading} />
                 {loading && <p>{loadingText}</p>}
                 {encryptedKey && (
                   <>
@@ -234,13 +167,7 @@ const UserEncryptionAuth: React.FC = () => {
                         {JSON.stringify(encryptedKey, null, 2)}
                       </pre>
                     </div>
-                    <Button
-                      onClick={handleFetchEncryptedToken}
-                      className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                      disabled={loading || !encryptedKey}
-                    >
-                      {loading ? "Fetching Encrypted Token..." : "Fetch Encrypted Token"}
-                    </Button>
+                    <FetchButton onClick={handleFetchEncryptedToken} label="Fetch Encrypted Token" loading={loading} />
                     {encryptedTokenData && (
                       <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
                         <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Encrypted Token Data:</h2>

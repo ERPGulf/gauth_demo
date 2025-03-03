@@ -4,3 +4,4 @@ export const getMasterDataPayload = () => ({
     app_key: import.meta.env.VITE_APP_APP_KEY, 
     client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
 });
+

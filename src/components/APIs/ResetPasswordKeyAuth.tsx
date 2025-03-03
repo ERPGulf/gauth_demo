@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import axios, { AxiosError } from 'axios';
-import { Button } from "@/components/ui/button";
+import axios from 'axios';
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
+import ParameterList from "./utils/ParameterList";
 
 const ResetPasswordKeyAuth: React.FC = () => {
   const title = 'Update Password Using Reset Key API';
@@ -15,75 +18,69 @@ const ResetPasswordKeyAuth: React.FC = () => {
   const [resetKey, setResetKey] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [mobile, setMobile] = useState('');
+
+  // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMasterDetails();
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
   };
 
+  // Reset Password Key
   const generateResetPasswordKey = async () => {
-    setLoading('Generating Reset Password Key...');
-    try {
-      if (!username || !mobile) {
-        throw new Error('Please enter a valid username and mobile number.');
-      }
-      if (!masterData?.access_token) {
-        throw new Error('Fetch master API first');
-      }
+    if (!username || !mobile) {
+      alert("Please enter a valid username and mobile number.");
+      return;
+    }
+    if (!masterData?.access_token) {
+      alert("Fetch master API first");
+      return;
+    }
+    const fetchResetPasswordKey = async () => {
       const accessToken = masterData.access_token;
-      const formData = new FormData();
-      formData.append('user', username);
-      formData.append('mobile', mobile);
+
+      // Use URLSearchParams to match application/x-www-form-urlencoded format
+      const requestData = new URLSearchParams();
+      requestData.append("recipient", username); // Assuming username is the email
+      requestData.append("mobile", mobile);
+
       const response = await axios.post(
         `${API_URL.BASE_URL}${API_URL.GENERATE_RESET_PASSWORD_KEY}`,
-        formData,
+        requestData.toString(), // Ensure correct format
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "application/x-www-form-urlencoded", // Change to match the API
             Authorization: `Bearer ${accessToken}`,
           },
         }
       );
-      setResetKeyData(response.data);
-      alert(`Reset key has been sent for username ${username}`);
-    } catch (error: unknown) {
-      let errorMessage = "An unknown error occurred.";
-
-      if (error instanceof AxiosError) {
-        errorMessage = error.response?.data || error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      console.error("Error generating reset password key:", errorMessage);
-      alert(`Failed to generate reset password key: ${errorMessage}`);
-    } finally {
-      setLoading(null);
-    }
+      return response.data;
+    };
+    const resetKey = await handleApiCall(
+      fetchResetPasswordKey,
+      setLoading,
+      `Reset key has been sent to ${username}`
+    );
+    if (resetKey) setResetKeyData(resetKey);
   };
 
+  // Update Password
   const updatePassword = async () => {
-    setLoading('Updating Password...');
-    try {
-      if (!newPassword || !resetKey || !username) {
-        throw new Error('All fields are required.');
-      }
+    if (!newPassword || !resetKey || !username) {
+      alert('All fields are required.');
+      return;
+    }
 
-      if (!masterData?.access_token) {
-        throw new Error('Fetch master API first to get the access token.');
-      }
-
+    if (!masterData?.access_token) {
+      alert('Fetch master API first to get the access token.');
+      return;
+    }
+    const fetchUpdatePassword = async () => {
       const accessToken = masterData.access_token;
       const requestData = new URLSearchParams();
       requestData.append('new_password', newPassword);
       requestData.append('reset_key', resetKey);
       requestData.append('username', username);
+
       const response = await axios.post(
         api,
         requestData,
@@ -94,83 +91,20 @@ const ResetPasswordKeyAuth: React.FC = () => {
           },
         }
       );
-      console.log('Response:', response.data);
+      return response.data;
+    };
 
-      alert('Password updated successfully.');
-    }
-
-    catch (error: unknown) {
-      let errorMessage = "An unknown error occurred.";
-
-      if (error instanceof AxiosError) {
-        errorMessage = error.response?.data || error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      console.error("Error updating password:", errorMessage);
-      alert(`Failed to update password: ${errorMessage}`);
-    }
-    finally {
-      setLoading(null);
-    }
+    await handleApiCall(fetchUpdatePassword, setLoading, 'Password updated successfully.');
   };
+
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input
-            type="text"
-            value={title}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input
-            type="text"
-            value={description}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input
-            type="text"
-            value={api}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Parameters" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
-            Parameters
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {parameters.map((param) => (
-              <div key={param}>
-                <input
-                  type="text"
-                  value={param}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg text-gray-800 bg-gray-100 focus:outline-none"
-                />
-              </div>
-            ))}
-
-          </div>
-        </div>
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
-        >
-          {loading ? 'Loading...' : 'Proceed'}
-        </Button>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
+        <ParameterList parameters={parameters} />
+        <FetchButton onClick={handleFetchMasterDetails} label="Proceed" loading={loading} />
         {masterData && (
           <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
             <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Master Data:</h2>
@@ -201,13 +135,7 @@ const ResetPasswordKeyAuth: React.FC = () => {
                 onChange={(e) => setMobile(e.target.value)}
               />
             </div>
-            <Button
-              onClick={generateResetPasswordKey}
-              className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!loading}
-            >
-              {loading ? 'Loading...' : 'Generate Reset Password Key'}
-            </Button>
+            <FetchButton onClick={generateResetPasswordKey} label="generate Reset Password Key" loading={loading} />
           </>
         )}
         {resetKeyData && (
@@ -242,13 +170,7 @@ const ResetPasswordKeyAuth: React.FC = () => {
                 className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <Button
-              onClick={updatePassword}
-              className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!loading}
-            >
-              {loading ? 'Loading...' : 'Update Password'}
-            </Button>
+            <FetchButton onClick={updatePassword} label="Update Password" loading={loading} />
           </>
         )}
       </div>

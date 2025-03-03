@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
-import API_URL from "@/components/APIs/API-URL";
-
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
 
 const LoginAuth: React.FC = () => {
     const title = "Generate Encrypted 2FA Token for User";
@@ -18,47 +19,37 @@ const LoginAuth: React.FC = () => {
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Fetch Master Token
     const handleFetchMasterDetails = async () => {
-        setLoading(true);
-        try {
-            const data = await fetchMasterDetails();
-            setMasterData(data);
-        } catch (error) {
-            console.error("Error fetching master details:", error);
-        } finally {
-            setLoading(false);
-        }
+        const data = await handleApiCall(fetchMasterDetails, setLoading);
+        if (data) setMasterData(data);
     };
+    // Generate Encrypted Key
     const handleGenerateEncryptedKey = async () => {
         setLoadingEncryptedKey(true);
         setError(null);
         try {
             const { email, password } = parameters;
-            const appKey = import.meta.env.VITE_APP_APP_KEY; // Fetch app key from env
+            const appKey = import.meta.env.VITE_APP_APP_KEY; 
 
             if (!email || !password) {
                 setError("Email and password are required.");
                 setLoadingEncryptedKey(false);
                 return;
             }
-
-            // Construct the text_for_encryption string
             const textForEncryption = `${email}::${password}::${appKey}`;
-
             const response = await axios.post(
                 `${API_URL.BASE_URL}${API_URL.GENERATE_2FA_TOKEN}`,
-                new URLSearchParams({ text_for_encryption: textForEncryption }), // URL-encoded data
+                new URLSearchParams({ text_for_encryption: textForEncryption }), 
                 {
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
-                        Authorization: `Bearer ${masterData?.access_token}`, // Ensure you have a valid access token
+                        Authorization: `Bearer ${masterData?.access_token}`, 
 
                     }
                 }
             );
             console.log("Encrypted Key Response:", response.data);
-
-            // Extract `data` properly
             if (response.data && response.data.data) {
                 setEncryptedKey(response.data.data);
             } else {
@@ -71,18 +62,16 @@ const LoginAuth: React.FC = () => {
             setLoadingEncryptedKey(false);
         }
     };
-
+// Generate OTP
     const handleGetOTP = async () => {
         setLoadingEncryptedKey(true);
         setError(null);
-
         try {
             if (!encryptedKey) {
                 setError("Encrypted key is missing. Please generate the encrypted key first.");
                 setLoadingEncryptedKey(false);
                 return;
             }
-
             const response = await axios.post(
                 `${API_URL.BASE_URL}${API_URL.VERIFY_2FA_TOKEN}`,
                 new URLSearchParams({ encrypted_key: encryptedKey }), // URL-encoded data
@@ -94,7 +83,6 @@ const LoginAuth: React.FC = () => {
                     }
                 }
             );
-
             console.log("OTP Response:", response.data);
             alert("OTP sent to your email successfully!");
         } catch (err) {
@@ -104,27 +92,25 @@ const LoginAuth: React.FC = () => {
             setLoadingEncryptedKey(false);
         }
     };
+    // Resend OTP
     const handleResendOTP = async () => {
         setError(null);
-        setSuccessMessage(null); // Reset messages before the request
-
+        setSuccessMessage(null); 
         try {
             if (!parameters.email) {
                 setError("Email is required to resend OTP.");
                 return;
             }
-
             const response = await axios.get(
                 `${API_URL.BASE_URL}${API_URL.RESEND_LOGIN_OTP}`,
                 {
                     params: { user: parameters.email },
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
-                        Authorization: `Bearer ${masterData?.access_token}`, // Ensure a valid access token
+                        Authorization: `Bearer ${masterData?.access_token}`, 
                     },
                 }
             );
-
             console.log("Resend OTP Response:", response.data);
             setSuccessMessage("OTP has been resent to your email.");
         } catch (err) {
@@ -132,10 +118,10 @@ const LoginAuth: React.FC = () => {
             setError("Failed to resend OTP. Please try again.");
         }
     };
-
+// Validate OTP
     const handleValidateOTP = async () => {
         setError(null);
-        setSuccessMessage(null); // Reset messages before the request
+        setSuccessMessage(null); 
         try {
             const response = await axios.post(
                 `${API_URL.BASE_URL}${API_URL.VERIFY_2FA_OTP}`,
@@ -144,7 +130,6 @@ const LoginAuth: React.FC = () => {
                     user_otp: otp,
                 })
             );
-
             console.log("OTP Validation Response:", response.data);
 
             if (response.data) {
@@ -162,35 +147,9 @@ const LoginAuth: React.FC = () => {
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
             <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-                    <input
-                        type="text"
-                        value={title}
-                        readOnly
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-                    <input
-                        type="text"
-                        value={description}
-                        readOnly
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-                    <input
-                        type="text"
-                        value={api}
-                        readOnly
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
+                <InputField label="Title" value={title} readOnly />
+                <InputField label="Description" value={description} readOnly />
+                <InputField label="API URL" value={api} readOnly />
 
                 {/* User Data Input Fields */}
                 <div className="mb-6 sm:mb-8">
@@ -222,15 +181,7 @@ const LoginAuth: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <Button
-                    onClick={handleFetchMasterDetails}
-                    className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                    disabled={loading}
-                    aria-busy={loading}
-                >
-                    {loading ? "Loading..." : "Fetch Master Details"}
-                </Button>
-
+                <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
                 {masterData && (
                     <>
                         <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
@@ -240,14 +191,7 @@ const LoginAuth: React.FC = () => {
                             </pre>
                         </div>
 
-                        <Button
-                            onClick={handleGenerateEncryptedKey}
-                            className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                            disabled={loadingEncryptedKey}
-                            aria-busy={loadingEncryptedKey}
-                        >
-                            {loadingEncryptedKey ? "Fetching..." : "proceed"}
-                        </Button>
+                        <FetchButton onClick={handleGenerateEncryptedKey} label="Generate Encrypted Key" loading={loadingEncryptedKey} />
 
                         {encryptedKey && (
                             <>
@@ -258,13 +202,7 @@ const LoginAuth: React.FC = () => {
                                     </pre>
                                 </div>
 
-                                <Button
-                                    onClick={handleGetOTP}
-                                    className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                                    disabled={!encryptedKey || loadingEncryptedKey}
-                                >
-                                    {loadingEncryptedKey ? "Sending OTP..." : "Get OTP"}
-                                </Button>
+                                <FetchButton onClick={handleGetOTP} label="Get OTP" loading={loadingEncryptedKey} />
 
 
                                 <div className="mt-6">
@@ -276,21 +214,9 @@ const LoginAuth: React.FC = () => {
                                         className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         placeholder="Enter OTP received in email"
                                     />
-                                    <Button
-                                        onClick={handleResendOTP}
-                                        className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                                        disabled={!parameters.email}
-                                    >
-                                        Resend OTP
-                                    </Button>
+                                    <FetchButton onClick={handleResendOTP} label="Resend OTP" loading={loading} />
 
-                                    <Button
-                                        onClick={handleValidateOTP}
-                                        className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                                        disabled={!otp || loadingEncryptedKey}
-                                    >
-                                        {loadingEncryptedKey ? "Validating OTP..." : "Validate OTP"}
-                                    </Button>
+                                    <FetchButton onClick={handleValidateOTP} label="Validate OTP" loading={loadingEncryptedKey} />
                                 </div>
                             </>
                         )}

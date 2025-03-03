@@ -1,14 +1,22 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import { fetchMasterDetails, createUserAPI } from "@/components/APIs/ApiFunction";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
 
 const CreateUserAuth: React.FC = () => {
+  interface UserDetails {
+    fullname: string;
+    mobile_no: string;
+    email: string;
+    password: string;
+  }
   const title = "Create User";
   const description = "Create a new user by providing user details.";
   const api = `${API_URL.BASE_URL}${API_URL.CREATE_USER}`;
-  const [parameters, setParameters] = useState<Record<string, string>>({
+  const [parameters, setParameters] = useState<UserDetails>({
     fullname: "",
     mobile_no: "",
     email: "",
@@ -32,243 +40,138 @@ const CreateUserAuth: React.FC = () => {
 
   // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMasterDetails();
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
+  };
+  // Create User
+  const createUser = async () => {
+    const response = await handleApiCall(
+      () => createUserAPI(masterData!, parameters),
+      setLoading,
+      "User created successfully!"
+    );
+    if (response) {
+      setCreateUserData(response);
+      setOtpSent(true);
     }
   };
 
-  // Create User
-  const createUser = async () => {
-    setLoading("Creating User...");
-    try {
-      // Check for masterData and access token
-      if (!masterData?.access_token) {
-        throw new Error("Fetch master API first");
-      }
-      console.log("Access Token:", masterData.access_token);
-      const accessToken = masterData.access_token;
-
-      // Validate user inputs
-      const { fullname, mobile_no, email, password } = parameters;
-      if (!fullname || !mobile_no || !email || !password) {
-        throw new Error("All fields are required: Full Name, Mobile No, Email, and Password");
-      }
-
-      // Prepare form data after validation
-      const formData = new FormData();
-      formData.append("full_name", fullname);
-      formData.append("mobile_no", mobile_no);
-      formData.append("email", email);
-      formData.append("password", password);
-
-      // Make API request
-      const response = await axios.post(api, formData, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      // Update state on success
-      setCreateUserData(response.data);
-      console.log("User created successfully:", response.data);
-      setOtpSent(true);
-    } catch (error: unknown) {
-      let errorMessage = "Failed to create user.";
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      if (typeof error === "object" && error !== null && "response" in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };
-        errorMessage = axiosError.response?.data?.message ?? errorMessage;
-
-      }
-
-      console.error("Error creating user:", error);
-      alert(errorMessage);
-    } finally {
-      setLoading(null);
-    }
-  }
-
   // Update Password using Reset Key
   const updatePasswordWithResetKey = async () => {
-    setLoadingPasswordUpdate(true);
-    try {
-      if (!masterData?.access_token) {
-        throw new Error("Fetch master API first");
-      }
-      if (!username || !resetKey || !newPassword) {
-        throw new Error("All fields are required: Username, Reset Key, and New Password");
-      }
-      const accessToken = masterData.access_token;
-      const formData = new URLSearchParams();
-      formData.append("new_password", newPassword);
-      formData.append("reset_key", resetKey);
-      formData.append("username", username);
+    if (!masterData?.access_token) {
+      alert("Fetch master API first");
+      return;
+    }
+    if (!username || !resetKey || !newPassword) {
+      alert("All fields are required: Username, Reset Key, and New Password");
+      return;
+    }
 
-      const response = await axios.post(
+    console.log("Updating password with:", { username, resetKey, newPassword });
+
+    const formData = new URLSearchParams();
+    formData.append("new_password", newPassword);
+    formData.append("reset_key", resetKey);
+    formData.append("username", username);
+
+    const apiFunction = async () => {
+      return axios.post(
         `${API_URL.BASE_URL}${API_URL.UPDATE_PASSWORD_USING_RESETKEY}`,
         formData,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${masterData.access_token}`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
         }
       );
+    };
+
+    const response = await handleApiCall(apiFunction, setLoadingPasswordUpdate, "Password updated successfully!");
+
+    if (response) {
+      console.log("Password update response:", response.data);
       setPasswordUpdateResponse(response.data);
-      console.log("Password updated successfully:", response.data);
-      alert("Password updated successfully!");
-    } catch (error: unknown) {
-      let errorMessage = "Failed to create user.";
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      if (typeof error === "object" && error !== null && "response" in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };
-        errorMessage = axiosError.response?.data?.message ?? errorMessage;
-      }
-
-      console.error("Error creating user:", error);
-      alert(errorMessage);
-    } finally {
-      setLoading(null);
+    } else {
+      console.warn("Failed to update password. Possible expired or invalid reset key.");
     }
-  }
+  };
 
+  // Resend OTP
   const handleResendOTP = async () => {
     setError(null);
-    setSuccessMessage(null); // Reset messages before the request
+    setSuccessMessage(null);
 
-    try {
-      if (!parameters.email) {
-        setError("Email is required to resend OTP.");
-        return;
-      }
-
-      const response = await axios.get(
-        `${API_URL.BASE_URL}${API_URL.RESEND_SIGNUP_OTP}`,
-        {
-          params: { user: parameters.email },
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: `Bearer ${masterData?.access_token}`, // Ensure a valid access token
-          },
-        }
-      );
+    if (!parameters.email) {
+      setError("Email is required to resend OTP.");
+      return;
+    }
+    const apiFunction = () =>
+      axios.get(`${API_URL.BASE_URL}${API_URL.RESEND_SIGNUP_OTP}`, {
+        params: { user: parameters.email },
+        headers: {
+          Authorization: `Bearer ${masterData?.access_token}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+    const response = await handleApiCall(apiFunction, setLoading, "OTP has been resent to your email.");
+    if (response) {
       setShowOtpInput(true);
       setResendOtpResponse(response.data);
       setSuccessMessage("OTP has been resent to your email.");
-    } catch (err) {
-      console.error("Error resending OTP:", err);
-      setError("Failed to resend OTP. Please try again.");
     }
   };
+
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        {/* Title Input */}
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
-            Title
-          </label>
-          <input
-            type="text"
-            value={title}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="Description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
-            Description
-          </label>
-          <input
-            type="text"
-            value={description}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">
-            API URL
-          </label>
-          <input
-            type="text"
-            value={api}
-            readOnly
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
         <div className="mb-6 sm:mb-8">
           <h3 className="text-lg font-semibold text-blue-500 mb-4">Enter User Data</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Full Name */}
-            <div>
-              <label className="block font-bold text-gray-700 mb-2">Full Name:</label>
-              <input
-                type="text"
-                value={parameters.fullname || ""}
-                onChange={(e) => setParameters((prev) => ({ ...prev, fullname: e.target.value }))}
-                placeholder="Enter full name"
-                className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <InputField
+              label="Full Name"
+              type="text"
+              value={parameters.fullname || ""}
+              placeholder="Enter full name"
+              readOnly={false}
+              onChange={(value) => setParameters((prev) => ({ ...prev, fullname: value }))}
+            />
             {/* Mobile Number */}
-            <div>
-              <label className="block font-bold text-gray-700 mb-2">Mobile No:</label>
-              <input
-                type="text"
-                value={parameters.mobile_no || ""}
-                onChange={(e) => setParameters((prev) => ({ ...prev, mobile_no: e.target.value }))}
-                placeholder="Enter mobile number"
-                className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <InputField
+              label="Mobile Number"
+              type="number"
+              value={parameters.mobile_no || ""}
+              placeholder="Enter mobile number"
+              readOnly={false}
+              onChange={(value) => setParameters((prev) => ({ ...prev, mobile_no: value }))}
+            />
             {/* Email */}
-            <div>
-              <label className="block font-bold text-gray-700 mb-2">Email:</label>
-              <input
-                type="email"
-                value={parameters.email || ""}
-                onChange={(e) => setParameters((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder="Enter email"
-                className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <InputField
+              label="Email"
+              type="email"
+              value={parameters.email || ""}
+              placeholder="Enter email"
+              readOnly={false}
+              onChange={(value) => setParameters((prev) => ({ ...prev, email: value }))}
+            />
+
             {/* Password */}
-            <div>
-              <label className="block font-bold text-gray-700 mb-2">Password:</label>
-              <input
-                type="password"
-                value={parameters.password || ""}
-                onChange={(e) => setParameters((prev) => ({ ...prev, password: e.target.value }))}
-                placeholder="Enter password"
-                className="w-full p-3 border rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <InputField
+              label="Password"
+              type="password"
+              value={parameters.password || ""}
+              placeholder="Enter password"
+              readOnly={false}
+              onChange={(value) => setParameters((prev) => ({ ...prev, password: value }))}
+            />
           </div>
         </div>
         {/* Fetch Master Details Button */}
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
-        >
-          {loading === "Fetching Master Details..." ? "Fetching..." : "Proceed"}
-        </Button>
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
         {/* Display Master Data */}
         {masterData && (
           <>
@@ -277,16 +180,9 @@ const CreateUserAuth: React.FC = () => {
               <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
                 {JSON.stringify(masterData, null, 2)}
               </pre>
-              {/* Create User Button */}
             </div>
             <>
-              <Button
-                onClick={createUser}
-                disabled={!!loading}
-                className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              >
-                {loading === "Creating User..." ? "Creating..." : "Create User"}
-              </Button>
+              <FetchButton onClick={createUser} label="Create User" loading={loading} />
 
               {/* Display Create User Data */}
               {createUserData && (
@@ -304,9 +200,7 @@ const CreateUserAuth: React.FC = () => {
                 </p>
               )}
 
-              <Button onClick={handleResendOTP} disabled={!!loading} className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70">
-                {loading ? loading : "Resend OTP"}
-              </Button>
+              <FetchButton onClick={handleResendOTP} label="Resend OTP" loading={loading} />
               {successMessage && <p className="text-green-600">{successMessage}</p>}
               {error && <p className="text-red-600">{error}</p>}
 
@@ -347,13 +241,7 @@ const CreateUserAuth: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-              <Button
-                onClick={updatePasswordWithResetKey}
-                disabled={loadingPasswordUpdate}
-                className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              >
-                {loadingPasswordUpdate ? "Updating..." : "Submit"}
-              </Button>
+              <FetchButton onClick={updatePasswordWithResetKey} label="Update Password" loading={loadingPasswordUpdate} />
 
               {/* Display Password Update Response */}
               {passwordUpdateResponse && (

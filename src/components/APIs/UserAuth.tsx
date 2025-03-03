@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useToast } from '../ui/use-toast';
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
 const UserAuth: React.FC = () => {
-
     const { toast } = useToast();
     const title = 'Generate User Token API';
     const description = 'Fetches the user-specific token';
     const api = `${API_URL.BASE_URL}${API_URL.USER_TOKEN}`;
-
     const [parameters, setParameters] = useState({
         username: '',
         password: '',
@@ -18,74 +18,34 @@ const UserAuth: React.FC = () => {
     const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
     const [loading, setLoading] = useState(false);
 
-
-    const handleMouseEnter = () => {
-        if (!masterData?.access_token) {
-            toast({ title: 'Warning', description: 'Please fetch master data first' });
-        }
+    // Fetch Master Token
+    const handleFetchMasterDetails = async () => {
+        const data = await handleApiCall(fetchMasterDetails, setLoading);
+        if (data) setMasterData(data);
     };
-   const handleFetchMasterDetails = async () => {
-       setLoading(true);
-       try {
-         const data = await fetchMasterDetails();
-         setMasterData(data);
-       } catch (error) {
-         console.error("Error fetching master details:", error);
-       } finally {
-         setLoading(false);
-       }
-     };
+    // Fetch User Token
     const handleFetchUserDetails = async () => {
-        setLoading(true);
-        try {
-            if (!masterData?.access_token) throw new Error("Fetch master API first.");
-            const { username, password } = parameters;
-            const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
-            if (!username || !password) throw new Error("Missing username or password.");
-            const data = await fetchUserDetails(masterData, { username, password, app_key });
-            setUserData(data);
-            toast({ title: "Success", description: "User details fetched successfully!" });
-        } catch (error) {
-            toast({ title: "Error", description: "An error occurred." });
-            console.error("Error fetching user details:", error);
-        } finally {
-            setLoading(false);
+        if (!masterData?.access_token) return;
+        const { username, password } = parameters;
+        const app_key = import.meta.env.VITE_APP_APP_KEY;
+        if (!username || !password) {
+            toast({ title: "Error", description: "Missing username or password." });
+            return;
         }
+        const data = await handleApiCall(
+            () => fetchUserDetails(masterData, { username, password, app_key }),
+            setLoading,
+            "User details fetched successfully!"
+        );
+        if (data) setUserData(data);
     };
+
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
-
-            {/* <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">{title}</h1> */}
             <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-                    <input
-                        type="text"
-                        value={title}
-                        readOnly
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-                    <input
-                        type="text"
-                        value={description}
-                        readOnly
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-                    <input
-                        type="text"
-                        value={api}
-                        readOnly
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
+                <InputField label="Title" value={title} readOnly />
+                <InputField label="Description" value={description} readOnly />
+                <InputField label="API URL" value={api} readOnly />
 
                 <div className="mb-6 sm:mb-8">
                     <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
@@ -109,13 +69,7 @@ const UserAuth: React.FC = () => {
                     </div>
                 </div>
 
-                <Button
-                    onClick={handleFetchMasterDetails}
-                    className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                    disabled={!!loading}
-                >
-                    proceed
-                </Button>
+                <FetchButton onClick={handleFetchMasterDetails} label="Proceed" loading={loading} />
                 {masterData && (
                     <>
                         <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
@@ -125,15 +79,8 @@ const UserAuth: React.FC = () => {
                             </pre>
                         </div>
 
+                        <FetchButton onClick={handleFetchUserDetails} label="Fetch User Data" loading={loading} />
 
-                        <Button
-                            onClick={handleFetchUserDetails}
-                            onMouseEnter={handleMouseEnter}
-                            className=" mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                            disabled={!!loading}
-                        >
-                            Fetch User Data
-                        </Button>
                         {userData && (
                             <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
                                 <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">User Data:</h2>

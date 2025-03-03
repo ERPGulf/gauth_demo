@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
-import API_URL from "@/components/APIs/API-URL";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
 
 const DeleteUserComponent: React.FC = () => {
   const title = "Delete User API";
@@ -13,17 +15,12 @@ const DeleteUserComponent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [deleteResponse, setDeleteResponse] = useState<{ message: string } | null>(null);
 
+  // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMasterDetails();
-      setMasterData(data);
-    } catch (error) {
-      console.error("Error fetching master details:", error);
-    } finally {
-      setLoading(false);
-    }
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
   };
+  /// Delete User
   const handleDeleteUser = async () => {
     const { email, mobile_no } = parameters;
     if (!email || !mobile_no) {
@@ -65,20 +62,9 @@ const DeleteUserComponent: React.FC = () => {
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
 
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="title" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input type="text" value={title} readOnly className="w-full p-3 border border-gray-300 rounded-lg text-gray-800" />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="description" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input type="text" value={description} readOnly className="w-full p-3 border border-gray-300 rounded-lg text-gray-800" />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label htmlFor="API URL" className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input type="text" value={api} readOnly className="w-full p-3 border border-gray-300 rounded-lg text-gray-800" />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
 
         <div className="mb-6 sm:mb-8">
           <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
@@ -96,9 +82,7 @@ const DeleteUserComponent: React.FC = () => {
             ))}
           </div>
         </div>
-        <Button onClick={handleFetchMasterDetails} className="w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70" disabled={loading}>
-          {loading ? "Fetching Data..." : "Fetch Master Data"}
-        </Button>
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
         {masterData && (
           <>
             <div className="bg-gray-300 p-4 sm:p-6 mt-6 rounded-lg shadow">
@@ -107,9 +91,7 @@ const DeleteUserComponent: React.FC = () => {
                 {JSON.stringify(masterData, null, 2)}
               </pre>
             </div>
-            <Button onClick={handleDeleteUser} className="mt-4 w-full py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70" disabled={loading}>
-              {loading ? "Deleting..." : "Delete User"}
-            </Button>
+            <FetchButton onClick={handleDeleteUser} label="Delete User" loading={loading} />
             {deleteResponse && (
               <div className="bg-gray-300 p-4 sm:p-6 mt-6 rounded-lg shadow">
                 <h2 className="text-lg font-bold mb-2 text-gray-800">Response:</h2>
