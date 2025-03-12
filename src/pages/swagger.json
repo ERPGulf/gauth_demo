@@ -629,7 +629,7 @@
               "application/json": {
                 "example": {
                   "message": "Encrypted key generated successfully",
-                  "encrypted_key": "W0dbR1tfV3JbQEFAV0ZSRhxSWV8JDn9EXkFaWlNxBwAHDgh8TH8CblhVXX9eYUh8TFVLelh8B3xkflt/YWNEbUh0BWtZbQFoXH9KbnZkA3wBcQF+cmBbbl90A3xZYQJ/BGBaeWVnXGh0cQJrXHcHe3V8B39eeQN8Zw8O"
+                 "encrypted_key": "encrypted_key_value"
                 }
               }
             }
@@ -667,7 +667,7 @@
               "application/json": {
                 "example": {
                   "message": "Encrypted token generated successfully",
-                  "encrypted_token": "YGBRXmvgDF9fzNsq6nIuJGxTxIseFO"
+                  "encrypted_token": "encrypted_token_value"
                 }
               }
             }
@@ -790,7 +790,7 @@
               "application/json": {
                 "example": {
                   "message": "Token encrypted successfully",
-                  "encrypted_token": "YGBRXmvgDF9fzNsq6nIuJGxTxIseFO"
+                  "encrypted_token": "encrypted_token_value"
                 }
               }
             }
