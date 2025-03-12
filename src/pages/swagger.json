@@ -93,10 +93,8 @@
             "description": "Token generated successfully",
             "content": {
               "application/json": {
-                "example": {
-                  "access_token": "pGYH0ETrPGmOBvGau0wpqYmTRyrBPu",
-                  "expires_in": 3600,
-                  "token_type": "Bearer"
+              "example": {  "message": "Token generated successfully"
+              }
                 }
               }
             }
