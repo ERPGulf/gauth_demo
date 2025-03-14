@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 const ApiList: React.FC = () => {
   const navigate = useNavigate();
 
-
-
   // API Definitions
   const apis = {
     masterApi: {
@@ -266,9 +264,10 @@ const ApiList: React.FC = () => {
 
   return (
 
-    <div className="relative z-20 p-4 min-h-screen flex flex-col items-center bg-gray-300  rounded-lg  ">
+    <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
       <h1 className="text-3xl sm:text-3xl md:text-3xl font-bold text-gray-800 mb-6">APIs</h1>
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px]  p-6 sm:p-10 shadow-2xl max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6  bg-gray-300  rounded-lg">
+
         {Object.entries(apis).map(([key, api]) => (
           <div
             key={key}
@@ -278,12 +277,12 @@ const ApiList: React.FC = () => {
               <h2 className="text-lg md:text-xl font-bold text-gray-800">{api.title}</h2>
               <span
                 className={`text-xs font-semibold text-white px-2 py-1 rounded-md ml-2 ${api.method === "POST"
-                    ? "bg-blue-500"
-                    : api.method === "GET"
-                      ? "bg-green-500"
-                      : api.method === "PUT"
-                        ? "bg-violet-500"
-                        : "bg-red-500"
+                  ? "bg-blue-500"
+                  : api.method === "GET"
+                    ? "bg-green-500"
+                    : api.method === "PUT"
+                      ? "bg-violet-500"
+                      : "bg-red-500"
                   }`}
               >
                 {api.method}

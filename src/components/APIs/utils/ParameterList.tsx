@@ -13,8 +13,8 @@ const ParameterList: React.FC<ParameterListProps> = ({ parameters }) => (
             Parameters
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {parameters.map((param, index) => (
-                <div key={index}>
+            {parameters.map((param) => (
+                <div key={param}>
                     <input
                         type="text"
                         value={param}

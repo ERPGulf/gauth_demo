@@ -93,9 +93,7 @@
             "description": "Token generated successfully",
             "content": {
               "application/json": {
-              "example": {  "message": "Token generated successfully"
-              }
-                }
+                "example": { "message": "Token generated successfully" }
               }
             }
           },
@@ -627,7 +625,7 @@
               "application/json": {
                 "example": {
                   "message": "Encrypted key generated successfully",
-                 "encrypted_key": "encrypted_key_value"
+                  "encrypted_key": "encrypted_key_value"
                 }
               }
             }
