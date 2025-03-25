@@ -1,152 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { Button } from "@/components/ui/button";
 import { fetchMasterDetails } from "@/components/APIs/ApiFunction";
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import ParameterList from "./utils/ParameterList";
+import FetchButton from './utils/FetchButton';
 
+interface RedirectResponse {
+  status: string | number;
+  url?: string;
+  redirect_url?: string;
+  message: string;
+  response?: string;
+
+}
 const TestRedirectAuth: React.FC = () => {
-  const location = useLocation();
-  const [title, setTitle] = useState<string>('Test Redirect URL');
-  const [description, setDescription] = useState<string>(
-    'Tests the redirection functionality of a URL'
-  );
-  const [api, setApi] = useState<string>(
-    "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.firebase_sms.test_redirect_url"
-  );
-  const [parameters, setParameters] = useState<Record<string, string>>({
-    full_name: '',
-    user_id: '',
-  });
-
-  const [masterData, setMasterData] = useState<any>(null);
+  const title = 'Test Redirect URL';
+  const description = 'Tests the redirection functionality of a URL';
+  const api = `${API_URL.BASE_URL}${API_URL.TEST_REDIRECT}`;
+  const parameters = ["api_key", "api_secret", "app_key", "client_secret"];
+  const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [testRedirectResponse, setTestRedirectResponse] = useState<any>(null);
+  const [testRedirectResponse, setTestRedirectResponse] = useState<RedirectResponse | null>(null);
   const [testRedirectLoading, setTestRedirectLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (location.state?.masterApiData) {
-      const { title, description, parameters } = location.state.masterApiData;
-      setTitle(title || 'Test Redirect URL');
-      setDescription(description || 'Tests the redirection functionality of a URL');
-      setParameters(parameters || {});
-    }
-  }, [location.state]);
-
+  // Fetch Master Token
   const handleFetchMasterDetails = async () => {
-    setLoading(true);
-    try {
-      const payload = {
-        api_key: import.meta.env.VITE_APP_gAUTH_API_KEY || '',
-        api_secret: import.meta.env.VITE_APP_API_SECRET || '',
-        app_key: import.meta.env.VITE_APP_APP_KEY || '',
-        client_secret: import.meta.env.VITE_APP_CLIENT_SECRET || '',
-      };
-
-      if (!payload.api_key || !payload.api_secret || !payload.app_key || !payload.client_secret) {
-        throw new Error('Environment variables are missing.');
-      }
-
-      const data = await fetchMasterDetails(payload);
-      setMasterData(data);
-    } catch (error: any) {
-      console.error('Error fetching master details:', error.message);
-    } finally {
-      setLoading(false);
-    }
+    const data = await handleApiCall(fetchMasterDetails, setLoading);
+    if (data) setMasterData(data);
   };
-
+  //test redirecting URL
   const testRedirectingUrl = async () => {
-    if (!masterData || !masterData.access_token) {
-      console.error('Fetch master API first');
+    if (!masterData?.access_token) {
+      console.error("Fetch master API first");
       return;
     }
-  
     const accessToken = masterData.access_token;
-  
-    setTestRedirectLoading(true);
-    try {
+    const apiFunction = async () => {
       const response = await axios.get(api, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        maxRedirects: 0,
-        validateStatus: (status) => status >= 200 && status < 400,
+        headers: { Authorization: `Bearer ${accessToken}` },
+        validateStatus: (status) => status < 400,
       });
-      setTestRedirectResponse(response.data);
-    } catch (error: any) {
-      console.error('Error testing redirecting URL:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
-    } finally {
-      setTestRedirectLoading(false);
+      return response.status === 303 && response.data?.redirect_url
+        ? { message: "Redirect detected", redirect_url: response.data.redirect_url, status: 303 }
+        : response.data;
+    };
+    const data = await handleApiCall(apiFunction, setTestRedirectLoading);
+    if (data) {
+      setTestRedirectResponse(data);
     }
   };
-  
+
+
   return (
     <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg">
       <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-        <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <InputField label="Title" value={title} readOnly />
+        <InputField label="Description" value={description} readOnly />
+        <InputField label="API URL" value={api} readOnly />
+        <ParameterList parameters={parameters} />
 
-        <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-          <input
-            type="text"
-            value={api}
-            onChange={(e) => setApi(e.target.value)}
-            className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-6 sm:mb-8">
-          <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {Object.entries(parameters).map(([key, value]) => (
-              <div key={key} className="flex flex-col">
-                <label className="font-bold text-gray-700 mb-1 sm:mb-2">{key}:</label>
-                <input
-                  type="text"
-                  value={value}
-                  onChange={(e) =>
-                    setParameters((prev) => ({
-                      ...prev,
-                      [key]: e.target.value,
-                    }))
-                  }
-                  className="p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Button
-          onClick={handleFetchMasterDetails}
-          className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-          disabled={!!loading}
-        >
-          {loading ? 'Fetching...' : 'Proceed'}
-        </Button>
-
+        <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
         {masterData && (
           <>
             <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto ">
@@ -155,21 +69,29 @@ const TestRedirectAuth: React.FC = () => {
                 {JSON.stringify(masterData, null, 2)}
               </pre>
             </div>
-
-            <Button
-              onClick={testRedirectingUrl}
-              className="mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-              disabled={!!testRedirectLoading}
-            >
-              {testRedirectLoading ? 'Testing...' : 'Test Redirecting URL'}
-            </Button>
-
+            <FetchButton onClick={testRedirectingUrl} label="fetch redirecting URL" loading={testRedirectLoading} />
             {testRedirectResponse && (
-              <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto sm:overflow-y-auto">
-                <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">Redirect Response:</h2>
+              <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
+                <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">
+                  Redirect Response:
+                </h2>
                 <pre className="text-sm bg-gray-100 p-3 sm:p-4 rounded-lg text-gray-800 w-full overflow-x-auto break-all sm:break-normal">
                   {JSON.stringify(testRedirectResponse, null, 2)}
                 </pre>
+
+                {testRedirectResponse.redirect_url && (
+                  <div className="mt-4">
+                    <p className="text-gray-700 font-semibold">Redirect URL:</p>
+                    <a
+                      href={testRedirectResponse.redirect_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline break-all"
+                    >
+                      {testRedirectResponse.redirect_url}
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </>

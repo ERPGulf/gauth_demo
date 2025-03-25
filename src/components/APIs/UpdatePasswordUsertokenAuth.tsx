@@ -1,87 +1,55 @@
-import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import { fetchMasterDetails, fetchUserDetails } from "@/components/APIs/ApiFunction";
 import axios from "axios";
 import { useToast } from '../ui/use-toast';
-
-
+import API_URL from "@/components/APIs/utils/API-URL";
+import handleApiCall from "./utils/api_auth";
+import InputField from "./utils/InputField";
+import FetchButton from './utils/FetchButton';
+interface UserData {
+    data: {
+        token: {
+            access_token: string;
+        };
+    };
+}
 
 const UpdatePasswordUserTokenAuth: React.FC = () => {
-    const location = useLocation();
     const { toast } = useToast();
-
-    const [title, setTitle] = useState<string>("Update Password Using User Token");
-    const [description, setDescription] = useState<string>(
-        "This API endpoint updates a user's password using an authorization token."
-    );
-    const [api, setApi] = useState<string>(`${import.meta.env.VITE_BASE_URL}gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_usertoken`);
-
+    const title = "Update Password Using User Token";
+    const description = "This API endpoint updates a user's password using an authorization token.";
+    const api = `${API_URL.BASE_URL}${API_URL.UPDATE_PASSWORD_USING_USERTOKEN}`;
     const [parameters, setParameters] = useState({
         username: '',
         password: '',
     });
-
-
-    const [masterData, setMasterData] = useState<any>(null);
+    const [masterData, setMasterData] = useState<Awaited<ReturnType<typeof fetchMasterDetails>> | null>(null);
     const [loading, setLoading] = useState<string | boolean | null>(null);
-    
-    const [userData, setUserData] = useState<any>(null);
+    const [userData, setUserData] = useState<UserData | null>(null);
     const [newPassword, setNewPassword] = useState<string>("");
 
-    useEffect(() => {
-        if (location.state && location.state.masterApiData) {
-            const { title, description, api, parameters } = location.state.masterApiData;
-            setTitle(title);
-            setDescription(description);
-            setApi(api);
-            setParameters(parameters);
-        }
-    }, [location.state]);
-
+    // Fetch Master Token
     const handleFetchMasterDetails = async () => {
-        setLoading(true);
-        try {
-            const payload = {
-                api_key: import.meta.env.VITE_APP_gAUTH_API_KEY,
-                api_secret: import.meta.env.VITE_APP_API_SECRET,
-                app_key: import.meta.env.VITE_APP_APP_KEY,  // Used internally, not displayed
-                client_secret: import.meta.env.VITE_APP_CLIENT_SECRET,
-            };
-
-            const data = await fetchMasterDetails(payload);
-            setMasterData(data);
-        } catch (error) {
-            toast({ title: "Error", description: "Failed to fetch master data." });
-            console.error("Error fetching master details:", error);
-        } finally {
-            setLoading(false);
-        }
+        const data = await handleApiCall(fetchMasterDetails, setLoading);
+        if (data) setMasterData(data);
     };
-
+    // Fetch User Token
     const handleFetchUserDetails = async () => {
-        setLoading(true);
-        try {
-            if (!masterData?.access_token) throw new Error("Fetch master API first.");
-
-            const { username, password } = parameters;
-            const app_key = import.meta.env.VITE_APP_APP_KEY; // Used but not shown in UI
-
-            if (!username || !password) throw new Error("Missing username or password.");
-
-            const data = await fetchUserDetails(masterData, { username, password, app_key });
-
-            setUserData(data);
-            console.log("User Details:", data);
-            toast({ title: "Success", description: "User details fetched successfully!" });
-        } catch (error) {
-            toast({ title: "Error", description: "An error occurred." });
-            console.error("Error fetching user details:", error);
-        } finally {
-            setLoading(false);
+        if (!masterData?.access_token) return;
+        const { username, password } = parameters;
+        const app_key = import.meta.env.VITE_APP_APP_KEY;
+        if (!username || !password) {
+            toast({ title: "Error", description: "Missing username or password." });
+            return;
         }
+        const data = await handleApiCall(
+            () => fetchUserDetails(masterData, { username, password, app_key }),
+            setLoading,
+            "User details fetched successfully!"
+        );
+        if (data) setUserData(data);
     };
-
+    //Update Password
     const handleUpdatePassword = async () => {
         setLoading("Updating Password...");
         try {
@@ -89,78 +57,51 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
             if (!userToken) {
                 throw new Error("User token not found. Please fetch user details first.");
             }
-    
             if (!newPassword.trim()) {
                 throw new Error("New password cannot be empty.");
             }
             console.log("API Endpoint:", api);
-    
-            const response = await axios.post(
-                api,
-                new URLSearchParams({ password: newPassword }),
-                {
-                    headers: {
-                        Authorization: `Bearer ${userToken}`,
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                    withCredentials: true,
-                }
-            );
-    
-            console.log("Password update response:", response.data);
-    
-            // ✅ Display success message in UI
-            toast({
-                title: "Success",
-                description: "Password updated successfully!",
-            });
-    
-        } catch (error: any) {
-            console.error("Error updating password:", error);
-    
+
+            // Define API function
+            const apiFunction = async () => {
+                return await axios.post(
+                    api,
+                    new URLSearchParams({ password: newPassword }),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${userToken}`,
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        withCredentials: true,
+                    }
+                );
+            };
+
+            // Use handleApiCall for API call
+            const response = await handleApiCall(apiFunction, setLoading, "Password updated successfully!");
+
+            if (response) {
+                console.log("Password update response:", response.data);
+                toast({
+                    title: "Success",
+                    description: "Password updated successfully!",
+                });
+            }
+        } catch (error) {
+            console.error("Unexpected error:", error);
             toast({
                 title: "Update Failed",
-                description: error.response?.data?.message || "An error occurred while updating the password.",
+                description: "An unexpected error occurred.",
             });
-        } finally {
-            setLoading(null);
         }
     };
-    
 
     return (
         <div className="relative z-20 p-4 sm:p-6 min-h-screen flex flex-col items-center bg-gray-300 rounded-lg ">
             <div className="w-full md:max-w-3xl max-w-[300px] min-h-[500px] sm:min-h-[700px] bg-gray-100 p-6 sm:p-10 rounded-lg shadow-2xl">
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Title</label>
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Description</label>
-                    <input
-                        type="text"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
-                <div className="mb-6 sm:mb-8">
-                    <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">API URL</label>
-                    <input
-                        type="text"
-                        value={api}
-                        onChange={(e) => setApi(e.target.value)}
-                        className="w-full p-3 sm:p-4 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-
+                <InputField label="Title" value={title} readOnly />
+                <InputField label="Description" value={description} readOnly />
+                <InputField label="API URL" value={api} readOnly />
                 <div className="mb-6 sm:mb-8">
                     <label className="block text-base sm:text-lg font-semibold text-gray-700 mb-2 sm:mb-3">Parameters</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -182,14 +123,7 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                         ))}
                     </div>
                 </div>
-
-                <Button
-                    onClick={handleFetchMasterDetails}
-                    className="w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                    disabled={!!loading}
-                >
-                    {loading === "Fetching Master Details..." ? "Loading..." : "Proceed"}
-                </Button>
+                <FetchButton onClick={handleFetchMasterDetails} label="Fetch Master Data" loading={loading} />
 
                 {masterData && (
                     <>
@@ -200,14 +134,7 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                             </pre>
                         </div>
 
-                        <Button
-                            onClick={handleFetchUserDetails}
-
-                            className=" mt-4 w-full py-3 sm:py-4 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                            disabled={!!loading}
-                        >
-                            Fetch User Data
-                        </Button>
+                        <FetchButton onClick={handleFetchUserDetails} label="Fetch User Data" loading={loading} />
                         {userData && (
                             <div className="bg-gray-300 p-4 sm:p-6 mt-6 sm:mt-8 rounded-lg shadow overflow-x-auto">
                                 <h2 className="text-base sm:text-lg font-bold mb-2 sm:mb-4 text-gray-800">User Data:</h2>
@@ -216,18 +143,11 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                                 </pre>
                             </div>
                         )}
-
-
                     </>
                 )}
-
-
-
                 {userData && (
                     <div className="mt-6">
                         <h2 className="text-lg sm:text-xl font-semibold text-gray-700 mb-4">Update Password</h2>
-
-                        {/* New Password Input */}
                         <div className="mb-4">
                             <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">New Password</label>
                             <input
@@ -237,27 +157,11 @@ const UpdatePasswordUserTokenAuth: React.FC = () => {
                                 className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
-
-                        {/* Update Password Button */}
-                        <Button
-                            onClick={handleUpdatePassword}
-                            className="mt-4 w-full py-2 sm:py-3 bg-primary/90 text-white rounded-lg hover:bg-primary/70"
-                            disabled={!!loading}
-                        >
-                            {loading === "Updating Password..." ? "Loading..." : "Update Password"}
-                        </Button>
+                        <FetchButton onClick={handleUpdatePassword} label="Update Password" loading={loading} />
                     </div>
                 )}
             </div>
         </div>
-
-
-
-
-
     );
-
-
 };
-
 export default UpdatePasswordUserTokenAuth;

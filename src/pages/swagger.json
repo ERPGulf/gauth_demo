@@ -1,0 +1,1141 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "gAuth API Documentation",
+    "description": "This is an auto-generated Swagger page for gAuth API list",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://gauth.erpgulf.com:4083",
+      "description": "Production Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure": {
+      "post": {
+        "summary": "Master API",
+        "description": "Generates a master token securely",
+        "parameters": [
+          {
+            "name": "api_key",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string",
+             "default": "DEMO-User-testuser"
+          
+          }
+          },
+          
+          {
+            "name": "api_secret",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "DEMO-Password-232NiereJH"  
+            }
+          },
+          
+          {
+            "name": "app_key",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string",
+          "default": "DEMO-App_key-MahgtrujdgdkKHFUNu"
+          }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users": {
+      "post": {
+        "summary": "Generate User Token",
+        "description": "Generates a token for users using username, password, and app_key.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "app_key",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string",
+           "default": "DEMO-App_key-MahgtrujdgdkKHFUNu"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token generated successfully",
+            "content": {
+              "application/json": {
+                "example": { "message": "Token generated successfully" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.firebase_sms.get_account_balance": {
+      "get": {
+        "summary": "Get Account Balance",
+        "description": "Fetches the account balance for the authenticated user.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account balance retrieved successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "balance": 1000.5,
+                  "currency": "USD"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.check_country_restriction": {
+      "get": {
+        "summary": "Check Country Restriction",
+        "description": "Checks if the user is allowed to use the service in the country.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Country restriction checked successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "allowed": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+
+    "/api/method/gauth_erpgulf.gauth_erpgulf.firebase_sms.get_customer_details": {
+      "get": {
+        "summary": "Get Customer Details",
+        "description": "Retrieves customer details based on the provided mobile number.",
+        "parameters": [
+          {
+            "name": "mobile_phone",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "number" }
+          },
+          {
+            "name": "user_email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer details retrieved successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Customer details retrieved successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_delete_user": {
+      "delete": {
+        "summary": "Delete User",
+        "description": "Deletes a user based on the provided user ID.",
+        "parameters": [
+          {
+            "name": "mobile_no",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "number" }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "User deleted successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_user_enable": {
+      "post": {
+        "summary": "Enable User",
+        "description": "Enables a user based on the provided user ID.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          },
+          {
+            "name": "mobile_no",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "number" }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User enabled successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "User enabled successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.is_api_request": {
+      "get": {
+        "summary": "Check API Request",
+        "description": "Checks if the request is an API request.",
+        "parameters": [
+          {
+            "name": "full_name",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API request checked successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "API request checked successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.is_user_available": {
+      "get": {
+        "summary": "Check User Availability",
+        "description": "Checks if a user is available based on the provided user ID.",
+        "parameters": [
+          {
+            "name": "mobile_phone",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "number" }
+          },
+          {
+            "name": "user_email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User available",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "User available"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.login_time": {
+      "get": {
+        "summary": "Get Login Time",
+        "description": "Fetches the login time for the authenticated user.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login time retrieved successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "login_time": "2021-08-01 12:00:00"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "tags": [
+      {
+        "name": "Login",
+        "description": "APIs related to user login and authentication"
+      },
+      {
+        "name": "Master Encryption",
+        "description": " APIs related to user login and authentication"
+      },
+      {
+        "name": "User Encryption",
+        "description": " APIs related to user login and authentication"
+      },
+      {
+        "name": "Signup",
+        "description": " APIs related to Creating User"
+      }
+    ],
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_create_user": {
+      "post": {
+        "summary": "Create User",
+        "description": "Creates a new user in the system.",
+        "tags": ["Signup"],
+        "parameters": [
+          {
+            "name": "full_name",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "mobile_no",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number" }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "password" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "User created successfully",
+                  "user_id": "123456"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.resend_otp_for_reset_key": {
+      "get": {
+        "summary": "Resend OTP for Reset Key",
+        "description": "Resends the OTP for resetting the user's password.",
+        "tags": ["Signup"],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "OTP sent successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_reset_key": {
+      "post": {
+        "summary": "Update Password Using Reset Key",
+        "description": "Updates the user's password using a reset key.",
+        "tags": ["Signup"],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "email" }
+          },
+          {
+            "name": "reset_key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "new_password",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "password" }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password updated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Password updated successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_encrypted_token": {
+      "post": {
+        "summary": "Generate Encrypted Token",
+        "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password` before sending the request.",
+        "tags": ["Login"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "User's email address."
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            },
+            "description": "User's password."
+          },
+          {
+            "name": "text_for_encryption",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "A string in the format email::password::appKey. The appKey is automatically added on the backend, so please enter email::password."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Encrypted token generated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Encrypted key generated successfully",
+                  "encrypted_key": "encrypted_key_value"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_token_encrypt_for_user_2fa": {
+      "post": {
+        "summary": "Generate Token Encrypt for User 2FA",
+        "description": "Generates a token encrypt for the user for 2FA.",
+        "tags": ["Login"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "encrypted_key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Encrypted token generated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Encrypted token generated successfully",
+                  "encrypted_token": "encrypted_token_value"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.2fa.resend_otp": {
+      "post": {
+        "summary": "Resend OTP",
+        "description": " Resends the OTP for the user.",
+        "tags": ["Login"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "OTP sent successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.2fa.validate_otp_to_generate_user_token": {
+      "post": {
+        "summary": "Validate OTP to Generate User Token",
+        "description": " Validates the OTP for the user and generates a user token.",
+        "tags": ["Login"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "user_otp",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OTP validated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "OTP validated successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt": {
+      "post": {
+        "summary": "Test Generate Token Encrypt",
+       "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password` before sending the request.",
+        "tags": ["Master Encryption"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "text_for_encryption",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "A string in the format email::password::appKey. The appKey is automatically added on the backend, so please enter email::password."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token encrypted successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Token encrypted successfully",
+                  "encrypted_token": "encrypted_token_value"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_encrypt": {
+      "post": {
+        "summary": "Generate Token Encrypt",
+        "description": " Generates a token encrypt for the user.",
+        "tags": ["Master Encryption"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "encrypted_key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token encrypted successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Token encrypted successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_random_password": {
+      "get": {
+        "summary": "Generate Random Password",
+        "description": "Generates a random password for the user.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Random password generated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Random password generated successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_generate_reset_password_key": {
+      "get": {
+        "summary": "Generate Reset Password Key",
+        "description": "Generates a reset password key for the user.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recipient",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "mobile",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reset password key generated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Reset password key generated successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.firebase_sms.test_redirect_url": {
+      "post": {
+        "summary": "Test Redirect URL",
+        "description": "Redirects to the specified URL.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Redirected successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Redirected successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password": {
+      "post": {
+        "summary": "Update Password",
+        "description": "Updates the user's password.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "password"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password updated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Password updated successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.g_update_password_using_usertoken": {
+      "post": {
+        "summary": " Update Password Using User Token",
+        "description": " Updates the user's password using the user token.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "password",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password updated successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Password updated successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt_for_user": {
+      "post": {
+        "summary": " Test Generate Token Encrypt for User",
+        "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password` before sending the request.",
+        "tags": ["User Encryption"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "text_for_encryption",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "A string in the format email::password::appKey. The appKey is automatically added on the backend, so please enter email::password."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token encrypted successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Token encrypted successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_encrypt_for_user": {
+      "post": {
+        "summary": "Generate Token Encrypt for User",
+        "description": " Generates a token encrypt for the user.",
+        "tags": ["User Encryption"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "encrypted_key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": " Token encrypted successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Token encrypted successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    },
+    "/api/method/gauth_erpgulf.gauth_erpgulf.firebase_sms.upload_file": {
+      "post": {
+        "summary": "Upload File",
+        "description": " Uploads a file to the server.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": " File uploaded successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "File uploaded successfully"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    }
+  }
+}

@@ -69,6 +69,7 @@ const IsUserAvailableAuth = lazy(() => import("@/components/APIs/IsUserAvailable
 const UpdatePasswordAuth = lazy(() => import("@/components/APIs/UpdatePasswordAuth"));
 const UpdatePasswordUsertokenAuth = lazy(() => import("@/components/APIs/UpdatePasswordUsertokenAuth"));
 const LoginAuth = lazy(() => import("@/components/APIs/LoginAuth"));
+const SwaggerPage = lazy(() => import("@/pages/SwaggerPage"));
 
 
 
@@ -138,7 +139,7 @@ const Router = () => {
         <Route path="/otp-verify" element={<OTPverify />} />
         <Route path="/CreateUser" element={<CreateUser />} />
         <Route path="/BackendApi" element={<BackendApi />} />
-
+        <Route path="SwaggerPage" element={<SwaggerPage />} />
 
         <Route path="/api" element={<ApiLayout />}> 
 
@@ -164,6 +165,7 @@ const Router = () => {
         <Route path="IsApiRequestAuth" element={<IsApiRequestAuth />} />
         <Route path="LogDetailsAuth" element={<LogDetailsAuth />} />
         <Route path="LoginAuth" element={<LoginAuth />} />
+       
         </Route>
 
 

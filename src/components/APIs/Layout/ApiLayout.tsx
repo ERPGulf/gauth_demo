@@ -43,4 +43,4 @@ function ApiLayout() {
 
 }
 
-export default ApiLayout
+export default ApiLayout;

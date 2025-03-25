@@ -1,86 +1,69 @@
-import axios, { AxiosError } from "axios";
-
-// Fetch master details
-export const fetchMasterDetails = async (payload: any) => {
+import axios from "axios";
+import { getMasterDataPayload } from "@/components/APIs/utils/payload";
+import API_URL from "@/components/APIs/utils/API-URL";
+export const fetchMasterDetails = async (): Promise<{
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+  scope: string;
+  refresh_token: string;
+}> => {
   try {
-    const response = await fetch(
-      "https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
+    const response = await axios.post(
+      `${API_URL.BASE_URL}${API_URL.APP_TOKEN}`,
+      getMasterDataPayload(),
+      { headers: { "Content-Type": "application/json" } }
     );
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Master details fetched successfully:", data.data);
-    return data.data;
+    console.log("Master details fetched successfully:", response.data.data);
+    return response.data.data;
   } catch (error) {
     console.error("Error fetching master details:", error);
     throw error;
   }
 };
 
-// Fetch user details
 export const fetchUserDetails = async (
-  masterData: any,
+  masterData: { access_token: string }, 
   params: { username: string; password: string; app_key: string }
 ) => {
-  // Ensure app_key exists before making the request
   if (!params.app_key) throw new Error("App key is required.");
-
-  // Perform API call (replace this with actual API logic)
-  const response = await fetch("https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.generate_token_secure_for_users", {
-      method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${masterData.access_token}`,
-      },
-      body: JSON.stringify(params),
+  const response = await fetch(`${API_URL.BASE_URL}${API_URL.USER_TOKEN}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${masterData.access_token}`, 
+    },
+    body: JSON.stringify(params),
   });
-
   if (!response.ok) {
-      throw new Error("Failed to fetch user details.");
+    throw new Error("Failed to fetch user details.");
   }
-
   return await response.json();
 };
 
-// Fetch encrypted key
-export const fetchEncryptedKey = async (
-  masterData: any,
-  
+export const createUserAPI = async (
+  masterData: { access_token: string },
+  userDetails: { fullname: string; mobile_no: string; email: string; password: string }
 ) => {
-  try {
-    if (!masterData || !masterData.access_token) {
-      throw new Error('Fetch master API first to get access token.');
-    }
-
-    const accessToken = masterData.access_token;
-    const textForEncryption = import.meta.env.VITE_APP_TEXT_FOR_ENCRYPTION;
-
-    const response = await axios.post(
-      'https://gauth.erpgulf.com:4083/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_encrypted_token',
-      new URLSearchParams({ text_for_encryption: textForEncryption }),
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-
-    console.log('Encrypted key fetched successfully:', response.data.message);
-    return response.data.message;
-  } catch (error: unknown) {
-    const err = error as AxiosError<{ message?: string }>;
-    console.error('Error fetching encrypted key:', err.response?.data?.message || err.message || 'Unknown error');
-    return null;
+  if (!masterData?.access_token) {
+    throw new Error("Fetch master API first");
   }
+  const { fullname, mobile_no, email, password } = userDetails;
+  if (!fullname || !mobile_no || !email || !password) {
+    throw new Error("All fields are required: Full Name, Mobile No, Email, and Password");
+  }
+  const formData = new FormData();
+  formData.append("full_name", fullname);
+  formData.append("mobile_no", mobile_no);
+  formData.append("email", email);
+  formData.append("password", password);
+  const response = await axios.post(`${API_URL.BASE_URL}${API_URL.CREATE_USER}`, formData, {
+    headers: {
+      Authorization: `Bearer ${masterData.access_token}`,
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
 };
+
+
