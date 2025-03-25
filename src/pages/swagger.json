@@ -34,20 +34,30 @@
           {
             "name": "api_key",
             "in": "query",
-            "required": true,
-            "schema": { "type": "string" }
+            "required": false,
+            "schema": { "type": "string",
+             "default": "DEMO-User-testuser"
+          
+          }
           },
+          
           {
             "name": "api_secret",
             "in": "query",
-            "required": true,
-            "schema": { "type": "string" }
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "DEMO-Password-232NiereJH"  
+            }
           },
+          
           {
             "name": "app_key",
             "in": "query",
-            "required": true,
-            "schema": { "type": "string" }
+            "required": false,
+            "schema": { "type": "string",
+          "default": "DEMO-App_key-MahgtrujdgdkKHFUNu"
+          }
           }
         ],
         "responses": {
@@ -84,8 +94,9 @@
           {
             "name": "app_key",
             "in": "query",
-            "required": true,
-            "schema": { "type": "string" }
+            "required": false,
+            "schema": { "type": "string",
+           "default": "DEMO-App_key-MahgtrujdgdkKHFUNu"}
           }
         ],
         "responses": {
@@ -580,7 +591,7 @@
     "/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_encrypted_token": {
       "post": {
         "summary": "Generate Encrypted Token",
-        "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password::appKey` before sending the request.",
+        "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password` before sending the request.",
         "tags": ["Login"],
         "security": [
           {
@@ -615,7 +626,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "A generated string in the format `email::password::appKey`."
+            "description": "A string in the format email::password::appKey. The appKey is automatically added on the backend, so please enter email::password."
           }
         ],
         "responses": {
@@ -639,7 +650,7 @@
     "/api/method/gauth_erpgulf.gauth_erpgulf.2fa.generate_token_encrypt_for_user_2fa": {
       "post": {
         "summary": "Generate Token Encrypt for User 2FA",
-        "description": "Generates a token encrypt for the user for 2FA. The frontend must generate 'text_for_encryption' in the format `email::password::appKey` before sending the request.",
+        "description": "Generates a token encrypt for the user for 2FA.",
         "tags": ["Login"],
         "security": [
           {
@@ -761,7 +772,7 @@
     "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt": {
       "post": {
         "summary": "Test Generate Token Encrypt",
-        "description": " Generates a token encrypt for the user.",
+       "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password` before sending the request.",
         "tags": ["Master Encryption"],
         "security": [
           {
@@ -776,7 +787,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "A generated string in the format `email::password::appKey`."
+            "description": "A string in the format email::password::appKey. The appKey is automatically added on the backend, so please enter email::password."
           }
         ],
         "responses": {
@@ -1018,7 +1029,7 @@
     "/api/method/gauth_erpgulf.gauth_erpgulf.backend_server.test_generate_token_encrypt_for_user": {
       "post": {
         "summary": " Test Generate Token Encrypt for User",
-        "description": " Generates a token encrypt for the user.",
+        "description": "Generates an encrypted token for the user. The frontend must generate 'text_for_encryption' in the format `email::password` before sending the request.",
         "tags": ["User Encryption"],
         "security": [
           {
@@ -1033,7 +1044,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "A generated string in the format `email::password::appKey`."
+            "description": "A string in the format email::password::appKey. The appKey is automatically added on the backend, so please enter email::password."
           }
         ],
         "responses": {
